@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Raca } from "@shared/types";
+import { Raca } from "@/types";
 
 interface SeletorAtributosLivresProps {
   raca: Raca;

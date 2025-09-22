@@ -1,13 +1,5 @@
 import React from 'react';
-import { Habilidade } from '@shared/types';
-
-interface Habilidade {
-  id: number;
-  nome: string;
-  descricao: string;
-  nivel?: number;
-  opcional?: boolean;
-}
+import { Habilidade } from '@/types';
 
 interface SeletorHabilidadesProps {
   tipo: 'raca' | 'classe' | 'origem' | 'divindade';
@@ -62,15 +54,15 @@ const SeletorHabilidades: React.FC<SeletorHabilidadesProps> = ({
 
   const renderHabilidade = (habilidade: Habilidade, isOpcional: boolean = false) => (
     <div
-      key={habilidade.id}
+      key={habilidade.id || habilidade.ID}
       className={`p-3 border rounded-lg transition-colors ${
         isOpcional
-          ? habilidadesSelecionadas.includes(habilidade.id)
+          ? habilidadesSelecionadas.includes(habilidade.id || habilidade.ID || 0)
             ? 'border-blue-500 bg-blue-50 cursor-pointer'
             : 'border-gray-200 cursor-pointer hover:bg-gray-50'
           : 'border-green-200 bg-green-50'
       }`}
-      onClick={() => isOpcional && handleSelecionarHabilidade(habilidade.id)}
+      onClick={() => isOpcional && handleSelecionarHabilidade(habilidade.id || habilidade.ID || 0)}
     >
       <div className="flex justify-between items-start mb-2">
         <h4 className="font-semibold text-sm text-gray-900">{habilidade.nome}</h4>

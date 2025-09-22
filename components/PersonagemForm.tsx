@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Personagem, Raca, Classe, Origem, Divindade, Habilidade, Pericia } from "@shared/types";
+import { Personagem, Raca, Classe, Origem, Divindade, Habilidade, Pericia } from "@/types";
 import { api } from "../lib/api";
 import PointBuyCalculator from "./PointBuyCalculator";
 import SeletorAtributosLivres from "./SeletorAtributosLivres";
@@ -381,7 +381,7 @@ export default function PersonagemForm() {
 
   const calculateTotalPV = (): number => {
     const classeEscolhida = classes.find(c => getId(c) === personagem.classe_id);
-    const basePV = classeEscolhida?.pvpornivel || 0;
+    const basePV = classeEscolhida?.pv_por_nivel || 0;
 
     // No Tormenta20, modificador é igual ao valor do atributo
     const modCon = personagem.con || 0;
@@ -395,11 +395,11 @@ export default function PersonagemForm() {
         bonusRacialCon += 1;
       } else {
         // Verificar bônus fixos
-        if (racaEscolhida.atributobonus1?.toLowerCase() === 'con') {
-          bonusRacialCon += racaEscolhida.valorbonus1 || 0;
+        if (racaEscolhida.atributo_bonus_1?.toLowerCase() === 'con') {
+          bonusRacialCon += racaEscolhida.valor_bonus_1 || 0;
         }
-        if (racaEscolhida.atributobonus2?.toLowerCase() === 'con') {
-          bonusRacialCon += racaEscolhida.valorbonus2 || 0;
+        if (racaEscolhida.atributo_bonus_2?.toLowerCase() === 'con') {
+          bonusRacialCon += racaEscolhida.valor_bonus_2 || 0;
         }
       }
     }
@@ -414,7 +414,7 @@ export default function PersonagemForm() {
 
   const calculateTotalPM = (): number => {
     const classeEscolhida = classes.find(c => getId(c) === personagem.classe_id);
-    const basePM = classeEscolhida?.pmpornivel || 0;
+    const basePM = classeEscolhida?.pm_por_nivel || 0;
 
     // No Tormenta20, modificador é igual ao valor do atributo
     const modInt = personagem.int || 0;
@@ -428,11 +428,11 @@ export default function PersonagemForm() {
         bonusRacialInt += 1;
       } else {
         // Verificar bônus fixos
-        if (racaEscolhida.atributobonus1?.toLowerCase() === 'int') {
-          bonusRacialInt += racaEscolhida.valorbonus1 || 0;
+        if (racaEscolhida.atributo_bonus_1?.toLowerCase() === 'int') {
+          bonusRacialInt += racaEscolhida.valor_bonus_1 || 0;
         }
-        if (racaEscolhida.atributobonus2?.toLowerCase() === 'int') {
-          bonusRacialInt += racaEscolhida.valorbonus2 || 0;
+        if (racaEscolhida.atributo_bonus_2?.toLowerCase() === 'int') {
+          bonusRacialInt += racaEscolhida.valor_bonus_2 || 0;
         }
       }
     }
@@ -726,10 +726,10 @@ export default function PersonagemForm() {
                   <div className="mt-2 p-2 bg-gray-50 rounded text-sm text-gray-700">
                     <strong>{classes.find(c => getId(c) === personagem.classe_id)?.nome}</strong>
                     <br />
-                    PV por nível: {classes.find(c => getId(c) === personagem.classe_id)?.pvpornivel},
-                    PM por nível: {classes.find(c => getId(c) === personagem.classe_id)?.pmpornivel}
+                    PV por nível: {classes.find(c => getId(c) === personagem.classe_id)?.pv_por_nivel},
+                    PM por nível: {classes.find(c => getId(c) === personagem.classe_id)?.pm_por_nivel}
                     <br />
-                    Atributo principal: {classes.find(c => getId(c) === personagem.classe_id)?.atributoprincipal}
+                    Atributo principal: {classes.find(c => getId(c) === personagem.classe_id)?.atributo_principal}
                     {/* Perícias da Classe */}
                     {personagem.classe_id && personagem.classe_id !== 0 && (
                         <ClassePericiasInfo classeId={personagem.classe_id} />
@@ -835,7 +835,7 @@ export default function PersonagemForm() {
                   <SeletorPoderesDivinos
                     divindadeId={personagem.divindade_id}
                     nivelPersonagem={personagem.nivel || 1}
-                    classeId={personagem.classe_id}
+                    classeId={personagem.classe_id || null}
                     poderesSelecionados={poderesDivinosSelecionados}
                     onPoderesSelecionados={(poderesOpcionais) => {
                       setPoderesDivinosSelecionados(poderesOpcionais);
@@ -982,6 +982,7 @@ export default function PersonagemForm() {
                 {personagem.divindade_id && poderesDivinosSelecionados.length > 0 && (
                   <PoderesDivinosSelecionados
                     divindadeId={personagem.divindade_id}
+                    nivelPersonagem={personagem.nivel || 1}
                     poderesSelecionados={poderesDivinosSelecionados}
                   />
                 )}

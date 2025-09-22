@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Habilidade } from '@shared/types';
+import { Habilidade } from '@/types';
 
 interface SeletorPoderesDivinosProps {
   divindadeId: number | null;

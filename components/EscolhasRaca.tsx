@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Poder, Pericia } from '@shared/types';
+import { Poder, Pericia } from '@/types';
 
 interface EscolhasRacaProps {
   racaId: number;
@@ -16,21 +16,6 @@ interface HabilidadeEspecial {
   descricao: string;
   tipo: string;
   opcoes: string;
-}
-
-interface Poder {
-  ID: number;
-  nome: string;
-  descricao: string;
-  tipo: string;
-  requisitos: string;
-}
-
-interface Pericia {
-  id: number;
-  nome: string;
-  atributo: string;
-  so_treinada: boolean;
 }
 
 const EscolhasRaca: React.FC<EscolhasRacaProps> = ({
@@ -205,19 +190,20 @@ const EscolhasRaca: React.FC<EscolhasRacaProps> = ({
                   return (
                     <>
                       {poderesParaMostrar.map(poder => {
-                        const poderSelecionado = escolhaAtual.poderes?.includes(poder.ID) || false;
+                        const poderSelecionado = escolhaAtual.poderes?.includes(poder.ID || poder.id || 0) || false;
+                        const poderId = poder.ID || poder.id || 0;
 
                         return (
-                          <div key={poder.ID} className="flex items-start space-x-2">
+                          <div key={poderId} className="flex items-start space-x-2">
                             <input
                               type="checkbox"
-                              id={`poder-${poder.ID}`}
+                              id={`poder-${poderId}`}
                               checked={poderSelecionado}
-                              onChange={(e) => handlePoderChange(poder.ID, e.target.checked)}
+                              onChange={(e) => handlePoderChange(poderId, e.target.checked)}
                               disabled={!poderSelecionado && pontosUsados + 2 > pontosDisponiveis}
                               className="mt-1"
                             />
-                            <label htmlFor={`poder-${poder.ID}`} className="text-sm">
+                            <label htmlFor={`poder-${poderId}`} className="text-sm">
                               <div className="font-medium text-red-800">{poder.nome}</div>
                               <div className="text-gray-600 text-xs mb-1">{poder.descricao.substring(0, 120)}...</div>
                               {poder.requisitos && (
@@ -361,15 +347,16 @@ const EscolhasRaca: React.FC<EscolhasRacaProps> = ({
                     );
 
                     return poderesFiltrados.map(poder => {
-                      const poderEscolhido = escolhaAtual.poderes?.includes(poder.ID) || false;
+                      const poderEscolhido = escolhaAtual.poderes?.includes(poder.ID || poder.id || 0) || false;
                       const maxAtingido = totalEscolhidos >= maxEscolhas;
+                      const poderId = poder.ID || poder.id || 0;
 
                       return (
-                        <label key={poder.ID} className="flex items-start space-x-2">
+                        <label key={poderId} className="flex items-start space-x-2">
                           <input
                             type="checkbox"
                             checked={poderEscolhido}
-                            onChange={(e) => handlePoderGeralChange(poder.ID, e.target.checked)}
+                            onChange={(e) => handlePoderGeralChange(poderId, e.target.checked)}
                             disabled={!poderEscolhido && maxAtingido}
                             className="mt-1"
                           />

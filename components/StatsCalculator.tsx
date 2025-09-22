@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Personagem, Stats } from '@shared/types';
+import { Personagem, Stats } from '@/types';
 
 // components/StatsCalculator.tsx
 export const StatsCalculator: React.FC<{personagem: Partial<Personagem>}> = ({ personagem }) => {

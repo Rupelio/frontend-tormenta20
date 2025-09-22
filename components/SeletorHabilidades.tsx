@@ -1,5 +1,5 @@
 import React from 'react';
-import { Habilidade } from '@shared/types';
+import { Habilidade } from '@/types';
 
 interface SeletorHabilidadesProps {
   tipo: 'raca' | 'classe' | 'origem' | 'divindade';
