@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Poder } from '@/types';
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
+
 interface PoderesOrigemAutomaticosProps {
   origemId: number | null;
 }
@@ -23,7 +25,7 @@ const PoderesOrigemAutomaticos: React.FC<PoderesOrigemAutomaticosProps> = ({
       setError(null);
 
       try {
-        const url = `http://localhost:8080/api/v1/poderes/origem/${origemId}`;
+        const url = `${API_BASE_URL}/api/v1/poderes/origem/${origemId}`;
         console.log('Carregando poderes da origem:', url);
 
         const response = await fetch(url);

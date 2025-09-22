@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Habilidade } from '@/types';
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
+
 interface PoderesDivinosSelecionadosProps {
   divindadeId: number | null;
   poderesSelecionados: number[];
@@ -26,7 +28,7 @@ const PoderesDivinosSelecionados: React.FC<PoderesDivinosSelecionadosProps> = ({
 
       try {
         // Carregar todos os poderes da divindade
-        const url = `http://localhost:8080/api/v1/habilidades/divindade/${divindadeId}`;
+        const url = `${API_BASE_URL}/api/v1/habilidades/divindade/${divindadeId}`;
         const response = await fetch(url);
 
         if (response.ok) {

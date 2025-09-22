@@ -1,6 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
 
 export default function TestePage() {
   const [status, setStatus] = useState('testando...');
@@ -12,7 +14,7 @@ export default function TestePage() {
         setStatus('Testando conexão com backend...');
 
         // Teste direto com fetch
-        const response = await fetch('http://localhost:8080/api/v1/divindades');
+        const response = await fetch(`${API_BASE_URL}/api/v1/divindades`);
 
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}: ${response.statusText}`);

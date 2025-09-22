@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Habilidade } from '@/types';
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
+
 interface SeletorPoderesClasseProps {
   classeId: number;
   classeNome: string;
@@ -32,7 +34,7 @@ const SeletorPoderesClasse: React.FC<SeletorPoderesClasseProps> = ({
 
       setLoading(true);
       try {
-        const response = await fetch(`http://localhost:8080/api/v1/habilidades/classe/${classeId}/nivel/${nivel}`);
+        const response = await fetch(`${API_BASE_URL}/api/v1/habilidades/classe/${classeId}/nivel/${nivel}`);
         if (response.ok) {
           const data = await response.json();
           setHabilidades(data || []);

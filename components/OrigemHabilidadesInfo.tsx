@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Habilidade } from '@/types';
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
+
 interface OrigemHabilidadesInfoProps {
   origemId: number | null;
 }
@@ -21,7 +23,7 @@ const OrigemHabilidadesInfo: React.FC<OrigemHabilidadesInfoProps> = ({ origemId 
       setError(null);
 
       try {
-        const response = await fetch(`http://localhost:8080/api/v1/habilidades/origem/${origemId}`);
+        const response = await fetch(`${API_BASE_URL}/api/v1/habilidades/origem/${origemId}`);
         if (response.ok) {
           const data = await response.json();
           setHabilidades(data || []);

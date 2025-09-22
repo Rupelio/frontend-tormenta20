@@ -3,6 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { Poder, Pericia } from '@/types';
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
+
 interface EscolhasRacaProps {
   racaId: number;
   escolhasAtuais?: any;
@@ -39,25 +41,25 @@ const EscolhasRaca: React.FC<EscolhasRacaProps> = ({
         setLoading(true);
 
         // Buscar habilidades especiais da raça
-        const habilidadesRes = await fetch(`http://localhost:8080/api/v1/habilidades-especiais/raca/${racaId}`);
+        const habilidadesRes = await fetch(`${API_BASE_URL}/api/v1/habilidades-especiais/raca/${racaId}`);
         const habilidadesData = await habilidadesRes.json();
         setHabilidadesEspeciais(habilidadesData || []);
 
         // Buscar poderes da Tormenta
-        const poderesRes = await fetch('http://localhost:8080/api/v1/poderes/tipo/Tormenta');
+        const poderesRes = await fetch(`${API_BASE_URL}/api/v1/poderes/tipo/Tormenta`);
         const poderesData = await poderesRes.json();
         setPoderesTormenta(poderesData || []);
 
         // Buscar poderes gerais (Combate, Destino, Magia)
         const poderesGeraisPromises = ['Combate', 'Destino', 'Magia'].map(tipo =>
-          fetch(`http://localhost:8080/api/v1/poderes/tipo/${tipo}`).then(res => res.json())
+          fetch(`${API_BASE_URL}/api/v1/poderes/tipo/${tipo}`).then(res => res.json())
         );
         const poderesGeraisData = await Promise.all(poderesGeraisPromises);
         const todosPoderesGerais = poderesGeraisData.flat();
         setPoderesGerais(todosPoderesGerais || []);
 
         // Buscar perícias
-        const periciasRes = await fetch('http://localhost:8080/api/v1/pericias');
+        const periciasRes = await fetch(`${API_BASE_URL}/api/v1/pericias`);
         const periciasData = await periciasRes.json();
         setPericias(periciasData || []);
 

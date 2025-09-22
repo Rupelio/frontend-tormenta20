@@ -9,6 +9,8 @@ import SeletorPericias from "./SeletorPericias";
 import SeletorHabilidades from "./SeletorHabilidades";
 import SeletorPoderesDivinos from "./SeletorPoderesDivinos";
 import SeletorPoderesClasse from "./SeletorPoderesClasse";
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
 import PoderesDivinosSelecionados from "./PoderesDivinosSelecionados";
 import PoderesOrigemAutomaticos from "./PoderesOrigemAutomaticos";
 import EscolhasRaca from "./EscolhasRaca";
@@ -268,7 +270,7 @@ export default function PersonagemForm() {
       // Atualizar perícias do personagem se foram selecionadas
       if (periciasEscolhidas.length > 0) {
         try {
-          await fetch(`http://localhost:8080/api/v1/personagens/${novoPersonagem.id}/pericias`, {
+          await fetch(`${API_BASE_URL}/api/v1/personagens/${novoPersonagem.id}/pericias`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -448,7 +450,7 @@ export default function PersonagemForm() {
   // Funções para carregar habilidades da API
   const carregarHabilidadesRaca = async (racaId: number) => {
     try {
-      const response = await fetch(`http://localhost:8080/api/v1/habilidades/raca/${racaId}`);
+      const response = await fetch(`${API_BASE_URL}/api/v1/habilidades/raca/${racaId}`);
       if (response.ok) {
         const habilidades = await response.json();
         setHabilidadesRaca(habilidades);
@@ -461,7 +463,7 @@ export default function PersonagemForm() {
 
   const carregarHabilidadesClasse = async (classeId: number, nivel: number) => {
     try {
-      const response = await fetch(`http://localhost:8080/api/v1/habilidades/classe/${classeId}/nivel/${nivel}`);
+      const response = await fetch(`${API_BASE_URL}/api/v1/habilidades/classe/${classeId}/nivel/${nivel}`);
       if (response.ok) {
         const habilidades = await response.json();
         setHabilidadesClasse(habilidades);
@@ -474,7 +476,7 @@ export default function PersonagemForm() {
 
   const carregarHabilidadesOrigem = async (origemId: number) => {
     try {
-      const response = await fetch(`http://localhost:8080/api/v1/habilidades/origem/${origemId}`);
+      const response = await fetch(`${API_BASE_URL}/api/v1/habilidades/origem/${origemId}`);
       if (response.ok) {
         const habilidades = await response.json();
         setHabilidadesOrigem(habilidades);
@@ -487,7 +489,7 @@ export default function PersonagemForm() {
 
   const carregarHabilidadesDivindade = async (divindadeId: number, nivel: number) => {
     try {
-      const response = await fetch(`http://localhost:8080/api/v1/habilidades/divindade/${divindadeId}/nivel/${nivel}`);
+      const response = await fetch(`${API_BASE_URL}/api/v1/habilidades/divindade/${divindadeId}/nivel/${nivel}`);
       if (response.ok) {
         const habilidades = await response.json();
         setHabilidadesDivindade(habilidades);
@@ -1022,7 +1024,7 @@ function OrigemPericiasInfo({ origemId }: { origemId: number }) {
 
       setLoading(true);
       try {
-        const response = await fetch(`http://localhost:8080/api/v1/origens/${origemId}/pericias`);
+        const response = await fetch(`${API_BASE_URL}/api/v1/origens/${origemId}/pericias`);
         if (response.ok) {
           const data = await response.json();
           setPericiasInfo(data);
@@ -1091,7 +1093,7 @@ function ClassePericiasInfo({ classeId }: { classeId: number }) {
 
       setLoading(true);
       try {
-        const response = await fetch(`http://localhost:8080/api/v1/classes/${classeId}/pericias`);
+        const response = await fetch(`${API_BASE_URL}/api/v1/classes/${classeId}/pericias`);
         if (response.ok) {
           const data = await response.json();
           setPericiasInfo(data);

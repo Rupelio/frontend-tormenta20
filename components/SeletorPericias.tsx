@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
+
 interface Pericia {
   id: number;
   nome: string;
@@ -52,7 +54,7 @@ export default function SeletorPericias({
 
         // Buscar perícias da classe
         promises.push(
-          fetch(`http://localhost:8080/api/v1/classes/${classeId}/pericias`)
+          fetch(`${API_BASE_URL}/api/v1/classes/${classeId}/pericias`)
             .then(res => res.ok ? res.json() : null)
             .catch(() => null)
         );
@@ -60,7 +62,7 @@ export default function SeletorPericias({
         // Buscar perícias da raça se selecionada
         if (racaId) {
           promises.push(
-            fetch(`http://localhost:8080/api/v1/racas/${racaId}/pericias`)
+            fetch(`${API_BASE_URL}/api/v1/racas/${racaId}/pericias`)
               .then(res => res.ok ? res.json() : null)
               .catch(() => null)
           );
@@ -71,7 +73,7 @@ export default function SeletorPericias({
         // Buscar perícias da origem se selecionada
         if (origemId) {
           promises.push(
-            fetch(`http://localhost:8080/api/v1/origens/${origemId}/pericias`)
+            fetch(`${API_BASE_URL}/api/v1/origens/${origemId}/pericias`)
               .then(res => res.ok ? res.json() : null)
               .catch(() => null)
           );
