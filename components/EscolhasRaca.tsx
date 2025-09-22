@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { Poder, Pericia } from '@shared/types';
 
 interface EscolhasRacaProps {
   racaId: number;

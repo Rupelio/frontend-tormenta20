@@ -1,4 +1,5 @@
 import React from 'react';
+import { Habilidade } from '@shared/types';
 
 interface Habilidade {
   id: number;
