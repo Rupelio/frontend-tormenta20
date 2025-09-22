@@ -72,21 +72,21 @@ const SeletorHabilidades: React.FC<SeletorHabilidadesProps> = ({
         }`}
         onClick={() => isOpcional && handleSelecionarHabilidade(habilidadeId)}
       >
-        <div className="flex justify-between items-start mb-2">
+        <div className="flex justify-between items-start mb-2 ">
           <h4 className="font-semibold text-sm text-gray-900">{habilidade.nome}</h4>
           <div className="flex gap-1">
             {habilidade.nivel && (
-              <span className="text-xs bg-gray-200 px-2 py-1 rounded">
+              <span className="text-xs bg-gray-200 px-2 py-1 rounded text-black">
                 Nível {habilidade.nivel}
               </span>
             )}
             {isOpcional && (
-              <span className="text-xs bg-blue-200 px-2 py-1 rounded">
+              <span className="text-xs bg-blue-200 px-2 py-1 rounded text-gray-700">
                 Opcional
               </span>
             )}
             {!isOpcional && (
-              <span className="text-xs bg-green-200 px-2 py-1 rounded">
+              <span className="text-xs bg-green-200 px-2 py-1 rounded text-gray-700">
                 Automática
               </span>
             )}

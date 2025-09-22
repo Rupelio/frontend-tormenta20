@@ -84,11 +84,11 @@ const PoderesDivinosSelecionados: React.FC<PoderesDivinosSelecionadosProps> = ({
                 <h5 className="font-semibold text-sm text-gray-900">{poder.nome}</h5>
                 <div className="flex gap-1">
                   {poder.nivel && (
-                    <span className="text-xs bg-gray-200 px-2 py-1 rounded">
+                    <span className="text-xs bg-gray-200 px-2 py-1 rounded text-gray-700">
                       Nível {poder.nivel}
                     </span>
                   )}
-                  <span className="text-xs bg-yellow-300 px-2 py-1 rounded">
+                  <span className="text-xs bg-yellow-300 px-2 py-1 rounded text-gray-700">
                     {poder.opcional ? 'Escolhido' : 'Automático'}
                   </span>
                 </div>

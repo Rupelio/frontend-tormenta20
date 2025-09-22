@@ -146,12 +146,12 @@ const EscolhasRaca: React.FC<EscolhasRacaProps> = ({
                   const bonusAtual = periciaEscolhida?.bonus || 0;
 
                   return (
-                    <div key={pericia.id} className="flex items-center justify-between">
-                      <label className="text-sm">{pericia.nome}</label>
+                    <div key={pericia.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2">
+                      <label className="text-sm font-medium min-w-0 flex-1">{pericia.nome}</label>
                       <select
                         value={bonusAtual}
                         onChange={(e) => handlePericiaChange(pericia.id, parseInt(e.target.value))}
-                        className="border rounded px-2 py-1 text-sm"
+                        className="border rounded px-2 py-1 text-sm w-full sm:w-auto sm:min-w-[80px]"
                         disabled={pontosUsados >= pontosDisponiveis && bonusAtual === 0}
                       >
                         <option value={0}>+0</option>
@@ -196,20 +196,20 @@ const EscolhasRaca: React.FC<EscolhasRacaProps> = ({
                         const poderId = poder.ID || poder.id || 0;
 
                         return (
-                          <div key={poderId} className="flex items-start space-x-2">
+                          <div key={poderId} className="flex items-start space-x-2 p-2 border rounded-lg hover:bg-gray-50">
                             <input
                               type="checkbox"
                               id={`poder-${poderId}`}
                               checked={poderSelecionado}
                               onChange={(e) => handlePoderChange(poderId, e.target.checked)}
                               disabled={!poderSelecionado && pontosUsados + 2 > pontosDisponiveis}
-                              className="mt-1"
+                              className="mt-1 flex-shrink-0"
                             />
-                            <label htmlFor={`poder-${poderId}`} className="text-sm">
-                              <div className="font-medium text-red-800">{poder.nome}</div>
-                              <div className="text-gray-600 text-xs mb-1">{poder.descricao.substring(0, 120)}...</div>
+                            <label htmlFor={`poder-${poderId}`} className="text-sm min-w-0 flex-1">
+                              <div className="font-medium text-red-800 break-words">{poder.nome}</div>
+                              <div className="text-gray-600 text-xs mb-1 break-words">{poder.descricao.substring(0, 120)}...</div>
                               {poder.requisitos && (
-                                <div className="text-purple-600 text-xs">Requisitos: {poder.requisitos}</div>
+                                <div className="text-purple-600 text-xs break-words">Requisitos: {poder.requisitos}</div>
                               )}
                             </label>
                           </div>
@@ -220,7 +220,7 @@ const EscolhasRaca: React.FC<EscolhasRacaProps> = ({
                         <button
                           type="button"
                           onClick={() => setMostrarTodosPoderes(true)}
-                          className="text-blue-600 text-sm hover:underline"
+                          className="text-blue-600 text-sm hover:underline w-full text-left"
                         >
                           Mostrar todos os {poderesFiltrados.length} poderes da Tormenta...
                         </button>
@@ -289,20 +289,23 @@ const EscolhasRaca: React.FC<EscolhasRacaProps> = ({
 
           <div className="mb-3 p-2 bg-blue-100 rounded text-sm">
             <strong>Escolhas flexíveis:</strong> Você pode escolher qualquer combinação até {maxEscolhas} itens:
-            <br />• {maxEscolhas} perícias
-            <br />• {maxEscolhas - 1} perícia + 1 poder geral
-            <br />• {maxEscolhas} poderes gerais
-            <br />
-            <span className="text-blue-600">
-              Selecionados: {totalEscolhidos || 0} / {maxEscolhas}
-            </span>
+            <div className="mt-1 text-xs space-y-1">
+              <div>• {maxEscolhas} perícias</div>
+              <div>• {maxEscolhas - 1} perícia + 1 poder geral</div>
+              <div>• {maxEscolhas} poderes gerais</div>
+            </div>
+            <div className="mt-2">
+              <span className="text-blue-600 font-medium">
+                Selecionados: {totalEscolhidos || 0} / {maxEscolhas}
+              </span>
+            </div>
           </div>
 
           <div className="space-y-4">
             {/* Seleção de Perícias */}
             <div className="p-3 bg-gray-50 rounded">
               <h6 className="font-medium mb-2">Perícias Disponíveis:</h6>
-              <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-2 max-h-48 overflow-y-auto">
                 {pericias.map(pericia => {
                   // Verificar se a perícia está selecionada (pode ser ID ou objeto)
                   const periciaEscolhida = escolhaAtual.pericias?.some((p: any) =>
@@ -311,14 +314,15 @@ const EscolhasRaca: React.FC<EscolhasRacaProps> = ({
                   const maxAtingido = totalEscolhidos >= maxEscolhas;
 
                   return (
-                    <label key={pericia.id} className="flex items-center space-x-2">
+                    <label key={pericia.id} className="flex items-center space-x-2 text-sm hover:bg-white p-1 rounded">
                       <input
                         type="checkbox"
                         checked={periciaEscolhida}
                         onChange={(e) => handlePericiaVersatilidadeChange(pericia.id, e.target.checked)}
                         disabled={!periciaEscolhida && maxAtingido}
+                        className="flex-shrink-0"
                       />
-                      <span className="text-sm">{pericia.nome}</span>
+                      <span className="min-w-0 flex-1 break-words">{pericia.nome}</span>
                     </label>
                   );
                 })}
@@ -354,19 +358,19 @@ const EscolhasRaca: React.FC<EscolhasRacaProps> = ({
                       const poderId = poder.ID || poder.id || 0;
 
                       return (
-                        <label key={poderId} className="flex items-start space-x-2">
+                        <label key={poderId} className="flex items-start space-x-2 p-2 border rounded-lg hover:bg-gray-50">
                           <input
                             type="checkbox"
                             checked={poderEscolhido}
                             onChange={(e) => handlePoderGeralChange(poderId, e.target.checked)}
                             disabled={!poderEscolhido && maxAtingido}
-                            className="mt-1"
+                            className="mt-1 flex-shrink-0"
                           />
-                          <div className="text-sm">
-                            <div className="font-medium text-blue-800">{poder.nome}</div>
-                            <div className="text-gray-600 text-xs mb-1">{poder.descricao.substring(0, 150)}...</div>
+                          <div className="text-sm min-w-0 flex-1">
+                            <div className="font-medium text-blue-800 break-words">{poder.nome}</div>
+                            <div className="text-gray-600 text-xs mb-1 break-words">{poder.descricao.substring(0, 150)}...</div>
                             {poder.requisitos && (
-                              <div className="text-purple-600 text-xs">Requisitos: {poder.requisitos}</div>
+                              <div className="text-purple-600 text-xs break-words">Requisitos: {poder.requisitos}</div>
                             )}
                             <div className="text-orange-600 text-xs font-medium">Tipo: {poder.tipo}</div>
                           </div>

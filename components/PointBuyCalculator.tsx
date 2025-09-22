@@ -212,14 +212,27 @@ const PointBuyCalculator: React.FC<PointBuyCalculatorProps> = ({
     const modificadorFinal = getModifier(valorFinal);
 
     return (
-      <div className="flex items-center justify-between p-3 border rounded-lg">
-        <div className="flex flex-col">
-          <span className="font-medium">{label}</span>
-          <span className="text-sm text-gray-600">
+      <div className="flex items-center justify-between p-3 border rounded-lg gap-3">
+        <div className="flex flex-col min-w-0" style={{ width: 'clamp(120px, 25vw, 180px)' }}>
+          <span 
+            className="font-medium text-gray-900 leading-none overflow-hidden whitespace-nowrap text-ellipsis"
+            style={{ fontSize: 'clamp(0.7rem, 2.2vw, 0.95rem)' }}
+            title={label}
+          >
+            {label}
+          </span>
+          <span 
+            className="text-gray-600 leading-none overflow-hidden whitespace-nowrap text-ellipsis mt-1"
+            style={{ fontSize: 'clamp(0.6rem, 1.8vw, 0.8rem)' }}
+          >
             Modificador: {modificadorFinal}
           </span>
           {racaSelecionada && (bonus !== 0 || penalidade !== 0) && (
-            <span className="text-xs text-blue-600">
+            <span 
+              className="text-blue-600 leading-none overflow-hidden whitespace-nowrap text-ellipsis mt-0.5"
+              style={{ fontSize: 'clamp(0.55rem, 1.6vw, 0.7rem)' }}
+              title={`Base: ${valorBase}${bonus > 0 ? ` +${bonus} racial` : ''}${penalidade < 0 ? ` ${penalidade} racial` : ''} = ${valorFinal} final`}
+            >
               Base: {valorBase}
               {bonus > 0 && ` +${bonus} racial`}
               {penalidade < 0 && ` ${penalidade} racial`}
@@ -227,33 +240,41 @@ const PointBuyCalculator: React.FC<PointBuyCalculatorProps> = ({
             </span>
           )}
         </div>
-        <div>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => updateAttribute(name, -1)}
-              disabled={atributos[name] <= -1}
-              className="w-8 h-8 flex items-center justify-center bg-red-500 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-red-600"
-            >
-              -
-            </button>
-            <span className="w-8 text-center font-bold">{atributos[name]}</span>
-            <button
-              type="button"
-              onClick={() => updateAttribute(name, 1)}
-              disabled={
-                atributos[name] >= 4 ||
-                (remainingPoints -
-                  (getCostForValue(atributos[name] + 1) - getCostForValue(atributos[name])) < 0)
-              }
-              className="w-8 h-8 flex items-center justify-center bg-green-500 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-green-600"
-            >
-              +
-            </button>
-            <span className="text-sm text-gray-600 ml-2">
-              Custo: {getCostForValue(atributos[name])}
-            </span>
-          </div>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <button
+            type="button"
+            onClick={() => updateAttribute(name, -1)}
+            disabled={atributos[name] <= -1}
+            className="w-8 h-8 flex items-center justify-center bg-red-500 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-red-600 flex-shrink-0"
+            style={{ fontSize: 'clamp(0.75rem, 2vw, 0.875rem)' }}
+          >
+            -
+          </button>
+          <span 
+            className="w-8 text-center font-bold flex-shrink-0"
+            style={{ fontSize: 'clamp(0.875rem, 2.5vw, 1rem)' }}
+          >
+            {atributos[name]}
+          </span>
+          <button
+            type="button"
+            onClick={() => updateAttribute(name, 1)}
+            disabled={
+              atributos[name] >= 4 ||
+              (remainingPoints -
+                (getCostForValue(atributos[name] + 1) - getCostForValue(atributos[name])) < 0)
+            }
+            className="w-8 h-8 flex items-center justify-center bg-green-500 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-green-600 flex-shrink-0"
+            style={{ fontSize: 'clamp(0.75rem, 2vw, 0.875rem)' }}
+          >
+            +
+          </button>
+          <span 
+            className="text-gray-600 whitespace-nowrap flex-shrink-0 ml-1"
+            style={{ fontSize: 'clamp(0.625rem, 1.8vw, 0.8rem)' }}
+          >
+            Custo: {getCostForValue(atributos[name])}
+          </span>
         </div>
       </div>
     );
@@ -261,12 +282,12 @@ const PointBuyCalculator: React.FC<PointBuyCalculatorProps> = ({
 
   return (
     <div className="space-y-4">
-      <div className="bg-blue-50 p-4 rounded-lg border">
+      <div className="bg-blue-50 p-3 lg:p-4 rounded-lg border">
         <h3 className="text-lg font-semibold mb-2">Distribuição de Pontos</h3>
         <p className="text-sm text-gray-600 mb-2">
           Você tem 10 pontos para distribuir. Cada nível de atributo tem um custo diferente.
         </p>
-        <div className="text-xs text-gray-500 grid grid-cols-3 gap-2">
+        <div className="text-xs text-gray-500 grid grid-cols-2 lg:grid-cols-3 gap-1 lg:gap-2">
           <span>-1: +1 ponto</span>
           <span>0: 0 pontos</span>
           <span>1: 1 ponto</span>
@@ -276,7 +297,7 @@ const PointBuyCalculator: React.FC<PointBuyCalculatorProps> = ({
         </div>
 
         <div className="mt-3 p-2 bg-white rounded border">
-          <span className="font-medium">Pontos restantes: </span>
+          <span className="font-medium text-sm lg:text-base">Pontos restantes: </span>
           <span className={`font-bold ${
             remainingPoints < 0
               ? 'text-red-600'
@@ -293,7 +314,7 @@ const PointBuyCalculator: React.FC<PointBuyCalculatorProps> = ({
             <span className="text-sm font-medium text-yellow-800">
               Bônus racial aplicado: {racaSelecionada.nome}
             </span>
-            <div className="text-xs text-yellow-700 mt-1">
+            <div className="text-xs text-yellow-700 mt-1 break-words">
               {racaSelecionada.atributo_bonus_1 && racaSelecionada.valor_bonus_1 && (
                 <span>
                   +{racaSelecionada.valor_bonus_1} {racaSelecionada.atributo_bonus_1.toUpperCase()}

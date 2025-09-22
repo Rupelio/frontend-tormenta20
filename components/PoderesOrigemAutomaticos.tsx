@@ -106,10 +106,10 @@ const PoderesOrigemAutomaticos: React.FC<PoderesOrigemAutomaticosProps> = ({
               <div className="flex justify-between items-start mb-2">
                 <h5 className="font-semibold text-sm text-gray-900">{poder.nome}</h5>
                 <div className="flex gap-1">
-                  <span className="text-xs bg-gray-200 px-2 py-1 rounded">
+                  <span className="text-xs bg-gray-200 px-2 py-1 rounded text-gray-700">
                     {poder.tipo}
                   </span>
-                  <span className="text-xs bg-green-300 px-2 py-1 rounded">
+                  <span className="text-xs bg-green-300 px-2 py-1 rounded text-gray-700">
                     Automático
                   </span>
                 </div>
