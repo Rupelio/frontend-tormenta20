@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Personagem, Raca, Classe, Origem, Divindade, Habilidade } from "@shared/types";
-import { api } from "@lib/api";
+import { api } from "../lib/api";
 import PointBuyCalculator from "./PointBuyCalculator";
 import SeletorAtributosLivres from "./SeletorAtributosLivres";
 import SeletorPericias from "./SeletorPericias";
