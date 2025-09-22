@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Raca } from "../../shared/types";
+import { Raca } from "@shared/types";
 import SeletorAtributosLivres from "./SeletorAtributosLivres";
 
 interface PointBuyCalculatorProps {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Poder } from '../../shared/types';
+import { Poder } from '@shared/types';
 
 interface PoderesOrigemAutomaticosProps {
   origemId: number | null;

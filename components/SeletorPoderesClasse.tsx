@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Habilidade } from '../../shared/types';
+import { Habilidade } from '@shared/types';
 
 interface SeletorPoderesClasseProps {
   classeId: number;
