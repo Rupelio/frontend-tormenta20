@@ -214,21 +214,21 @@ const PointBuyCalculator: React.FC<PointBuyCalculatorProps> = ({
     return (
       <div className="flex items-center justify-between p-3 border rounded-lg gap-3">
         <div className="flex flex-col min-w-0" style={{ width: 'clamp(120px, 25vw, 180px)' }}>
-          <span 
+          <span
             className="font-medium text-gray-900 leading-none overflow-hidden whitespace-nowrap text-ellipsis"
             style={{ fontSize: 'clamp(0.7rem, 2.2vw, 0.95rem)' }}
             title={label}
           >
             {label}
           </span>
-          <span 
+          <span
             className="text-gray-600 leading-none overflow-hidden whitespace-nowrap text-ellipsis mt-1"
             style={{ fontSize: 'clamp(0.6rem, 1.8vw, 0.8rem)' }}
           >
             Modificador: {modificadorFinal}
           </span>
           {racaSelecionada && (bonus !== 0 || penalidade !== 0) && (
-            <span 
+            <span
               className="text-blue-600 leading-none overflow-hidden whitespace-nowrap text-ellipsis mt-0.5"
               style={{ fontSize: 'clamp(0.55rem, 1.6vw, 0.7rem)' }}
               title={`Base: ${valorBase}${bonus > 0 ? ` +${bonus} racial` : ''}${penalidade < 0 ? ` ${penalidade} racial` : ''} = ${valorFinal} final`}
@@ -250,7 +250,7 @@ const PointBuyCalculator: React.FC<PointBuyCalculatorProps> = ({
           >
             -
           </button>
-          <span 
+          <span
             className="w-8 text-center font-bold flex-shrink-0"
             style={{ fontSize: 'clamp(0.875rem, 2.5vw, 1rem)' }}
           >
@@ -269,7 +269,7 @@ const PointBuyCalculator: React.FC<PointBuyCalculatorProps> = ({
           >
             +
           </button>
-          <span 
+          <span
             className="text-gray-600 whitespace-nowrap flex-shrink-0 ml-1"
             style={{ fontSize: 'clamp(0.625rem, 1.8vw, 0.8rem)' }}
           >

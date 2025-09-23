@@ -66,6 +66,10 @@ class ApiService {
   }
 
   // Personagens
+  async getPersonagens(): Promise<Personagem[]> {
+    return this.request<Personagem[]>('/api/v1/personagens');
+  }
+
   async createPersonagem(personagem: Omit<Personagem, 'id'>): Promise<Personagem> {
     return this.request<Personagem>('/api/v1/personagens', {
       method: 'POST',
@@ -88,6 +92,44 @@ class ApiService {
     return this.request<void>(`/api/v1/personagens/${id}`, {
       method: 'DELETE',
     });
+  }
+
+  // Salvar perícias do personagem
+  async savePersonagemPericias(personagemId: number, periciasIds: number[]): Promise<any> {
+    return this.request<any>(`/api/v1/personagens/${personagemId}/pericias`, {
+      method: 'POST',
+      body: JSON.stringify({ pericias_ids: periciasIds }),
+    });
+  }
+
+  // Buscar perícias por origem
+  async getPericiasOrigem(origemId: number): Promise<any> {
+    return this.request<any>(`/api/v1/origens/${origemId}/pericias`);
+  }
+
+  // Buscar perícias por classe
+  async getPericiasClasse(classeId: number): Promise<any> {
+    return this.request<any>(`/api/v1/classes/${classeId}/pericias`);
+  }
+
+  // Buscar habilidades por raça
+  async getHabilidadesRaca(racaId: number): Promise<any> {
+    return this.request<any>(`/api/v1/habilidades/raca/${racaId}`);
+  }
+
+  // Buscar habilidades por classe e nível
+  async getHabilidadesClasse(classeId: number, nivel: number): Promise<any> {
+    return this.request<any>(`/api/v1/habilidades/classe/${classeId}/nivel/${nivel}`);
+  }
+
+  // Buscar habilidades por origem
+  async getHabilidadesOrigem(origemId: number): Promise<any> {
+    return this.request<any>(`/api/v1/habilidades/origem/${origemId}`);
+  }
+
+  // Buscar habilidades por divindade e nível
+  async getHabilidadesDivindade(divindadeId: number, nivel: number): Promise<any> {
+    return this.request<any>(`/api/v1/habilidades/divindade/${divindadeId}/nivel/${nivel}`);
   }
 
   // Health check

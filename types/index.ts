@@ -55,9 +55,9 @@ export interface Classe {
   id?: number;
   ID?: number;
   nome: string;
-  pv_por_nivel: number;
-  pm_por_nivel: number;
-  atributo_principal: string;
+  pvpornivel: number;
+  pmpornivel: number;
+  atributoprincipal: string;
 }
 
 export interface Origem {
