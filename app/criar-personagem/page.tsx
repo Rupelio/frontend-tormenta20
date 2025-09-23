@@ -2,10 +2,11 @@
 'use client';
 
 import { useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
 import ClientOnly from '@/components/ClientOnly';
 import PersonagemForm from '@/components/PersonagemForm';
 
-export default function CriarPersonagemPage() {
+function CriarPersonagemContent() {
   const searchParams = useSearchParams();
   const editId = searchParams.get('edit');
 
@@ -13,5 +14,13 @@ export default function CriarPersonagemPage() {
     <ClientOnly>
       <PersonagemForm editId={editId} />
     </ClientOnly>
+  );
+}
+
+export default function CriarPersonagemPage() {
+  return (
+    <Suspense fallback={<div>Carregando...</div>}>
+      <CriarPersonagemContent />
+    </Suspense>
   );
 }

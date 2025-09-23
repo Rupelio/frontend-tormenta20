@@ -88,6 +88,8 @@ export interface Personagem {
   pontos_vida?: number;
   pontos_mana?: number;
   defesa?: number;
+  escolhas_raca?: string;
+  pericias?: Pericia[];
 }
 
 export interface Stats {
