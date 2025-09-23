@@ -171,8 +171,8 @@ const TesteExportarPDF = () => {
 
         {/* Exemplos e Documentação */}
         <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className="bg-white rounded-lg shadow-lg p-6">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">
+          <div className="bg-white rounded-lg shadow-lg p-6 text-gray-800">
+            <h3 className="text-lg font-semibold mb-4">
               📱 Compatibilidade Testada
             </h3>
             <div className="space-y-3">
@@ -195,8 +195,8 @@ const TesteExportarPDF = () => {
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-lg p-6">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">
+          <div className="bg-white rounded-lg shadow-lg p-6 text-gray-800">
+            <h3 className="text-lg font-semibold mb-4">
               🎯 Recursos Implementados
             </h3>
             <div className="space-y-3">

@@ -9,6 +9,7 @@ class ApiService {
 
     try {
       const response = await fetch(url, {
+        credentials: 'include', // Inclui cookies nas requisições
         headers: {
           'Content-Type': 'application/json',
           ...options?.headers,
@@ -81,10 +82,10 @@ class ApiService {
     return this.request<Personagem>(`/api/v1/personagens/${id}`);
   }
 
-  async updatePersonagem(id: number, personagem: Partial<Personagem>): Promise<Personagem> {
+  async updatePersonagem(id: number, data: any): Promise<Personagem> {
     return this.request<Personagem>(`/api/v1/personagens/${id}`, {
       method: 'PUT',
-      body: JSON.stringify(personagem),
+      body: JSON.stringify(data),
     });
   }
 
@@ -100,6 +101,50 @@ class ApiService {
       method: 'POST',
       body: JSON.stringify({ pericias_ids: periciasIds }),
     });
+  }
+
+  // Buscar perícias selecionadas do personagem
+  async getPersonagemPericias(personagemId: number): Promise<{personagem_id: number, pericias_ids: number[]}> {
+    return this.request<{personagem_id: number, pericias_ids: number[]}>(`/api/v1/personagens/${personagemId}/pericias`);
+  }
+
+  // Salvar poderes divinos do personagem
+  async savePersonagemPoderesDivinos(personagemId: number, poderesIds: number[]): Promise<any> {
+    return this.request<any>(`/api/v1/personagens/${personagemId}/poderes-divinos`, {
+      method: 'POST',
+      body: JSON.stringify({ poderes_ids: poderesIds }),
+    });
+  }
+
+  // Salvar poderes de classe do personagem
+  async savePersonagemPoderesClasse(personagemId: number, poderesIds: number[]): Promise<any> {
+    return this.request<any>(`/api/v1/personagens/${personagemId}/poderes-classe`, {
+      method: 'POST',
+      body: JSON.stringify({ poderes_ids: poderesIds }),
+    });
+  }
+
+  // Buscar poderes divinos selecionados do personagem
+  async getPersonagemPoderesDivinos(personagemId: number): Promise<{personagem_id: number, poderes_ids: number[]}> {
+    return this.request<{personagem_id: number, poderes_ids: number[]}>(`/api/v1/personagens/${personagemId}/poderes-divinos`);
+  }
+
+  // Buscar poderes de classe selecionados do personagem
+  async getPersonagemPoderesClasse(personagemId: number): Promise<{personagem_id: number, poderes_ids: number[]}> {
+    return this.request<{personagem_id: number, poderes_ids: number[]}>(`/api/v1/personagens/${personagemId}/poderes-classe`);
+  }
+
+  // Salvar escolhas raciais do personagem
+  async savePersonagemEscolhasRaca(personagemId: number, escolhas: any): Promise<any> {
+    return this.request<any>(`/api/v1/personagens/${personagemId}/escolhas-raca`, {
+      method: 'POST',
+      body: JSON.stringify({ escolhas }),
+    });
+  }
+
+  // Buscar escolhas raciais do personagem
+  async getPersonagemEscolhasRaca(personagemId: number): Promise<{personagem_id: number, escolhas: any}> {
+    return this.request<{personagem_id: number, escolhas: any}>(`/api/v1/personagens/${personagemId}/escolhas-raca`);
   }
 
   // Buscar perícias por origem

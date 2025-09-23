@@ -75,10 +75,16 @@ const EscolhasRaca: React.FC<EscolhasRacaProps> = ({
     }
   }, [racaId]);
 
-  const handleEscolhaChange = (habilidadeId: number, novaEscolha: any) => {
+  // useEffect para atualizar escolhas quando escolhasAtuais mudar
+  useEffect(() => {
+    setEscolhas(escolhasAtuais);
+  }, [escolhasAtuais]);
+
+  const handleEscolhaChange = (tipo: string, valor: any) => {
+
     const novasEscolhas = {
       ...escolhas,
-      [habilidadeId]: novaEscolha
+      [tipo]: valor
     };
     setEscolhas(novasEscolhas);
     onEscolhasChange(novasEscolhas);
@@ -102,7 +108,7 @@ const EscolhasRaca: React.FC<EscolhasRacaProps> = ({
         novaEscolha.pericias.push({ id: periciaId, bonus: valor });
       }
 
-      handleEscolhaChange(habilidade.id, novaEscolha);
+      handleEscolhaChange(habilidade.id.toString(), novaEscolha);
     };
 
     const handlePoderChange = (poderId: number, selected: boolean) => {
@@ -118,7 +124,7 @@ const EscolhasRaca: React.FC<EscolhasRacaProps> = ({
         novaEscolha.poderes = novaEscolha.poderes.filter((id: number) => id !== poderId);
       }
 
-      handleEscolhaChange(habilidade.id, novaEscolha);
+      handleEscolhaChange(habilidade.id.toString(), novaEscolha);
     };
 
     const totalPontosPericias = escolhaAtual.pericias?.reduce((sum: number, p: any) => sum + (p.bonus || 0), 0) || 0;
@@ -259,7 +265,7 @@ const EscolhasRaca: React.FC<EscolhasRacaProps> = ({
         );
       }
 
-      handleEscolhaChange(habilidade.id, novaEscolha);
+      handleEscolhaChange(habilidade.id.toString(), novaEscolha);
     };
 
     const handlePoderGeralChange = (poderId: number, selected: boolean) => {
@@ -275,7 +281,7 @@ const EscolhasRaca: React.FC<EscolhasRacaProps> = ({
         novaEscolha.poderes = novaEscolha.poderes.filter((id: number) => id !== poderId);
       }
 
-      handleEscolhaChange(habilidade.id, novaEscolha);
+      handleEscolhaChange(habilidade.id.toString(), novaEscolha);
     };
 
     const totalEscolhidos = (escolhaAtual.pericias?.length || 0) + (escolhaAtual.poderes?.length || 0);
@@ -353,9 +359,9 @@ const EscolhasRaca: React.FC<EscolhasRacaProps> = ({
                     );
 
                     return poderesFiltrados.map(poder => {
-                      const poderEscolhido = escolhaAtual.poderes?.includes(poder.ID || poder.id || 0) || false;
-                      const maxAtingido = totalEscolhidos >= maxEscolhas;
                       const poderId = poder.ID || poder.id || 0;
+                      const poderEscolhido = escolhaAtual.poderes?.includes(poderId) || false;
+                      const maxAtingido = totalEscolhidos >= maxEscolhas;
 
                       return (
                         <label key={poderId} className="flex items-start space-x-2 p-2 border rounded-lg hover:bg-gray-50">

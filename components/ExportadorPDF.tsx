@@ -53,7 +53,7 @@ const ExportadorPDF: React.FC<ExportadorPDFProps> = ({ personagem, onExport }) =
         extra_sections: options.extraSections.join(',')
       });
 
-      const response = await fetch(`${API_BASE_URL}/api/v1/personagens/${personagem.id}/export-pdf?${params}`);
+      const response = await fetch(`${API_BASE_URL}/api/v1/${personagem.id}/export-pdf?${params}`);
 
       if (!response.ok) {
         throw new Error('Erro ao gerar PDF');

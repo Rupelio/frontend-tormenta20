@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { Personagem, Raca, Classe, Origem, Divindade, Habilidade, Pericia } from "@/types";
 import { api } from "../lib/api";
@@ -24,6 +24,7 @@ interface PersonagemFormProps {
 
 function PersonagemFormComponent({ editId }: PersonagemFormProps) {
   const [mounted, setMounted] = useState(false);
+  const isInitialMount = useRef(true);
 
   // Hooks customizados
   const {
@@ -55,12 +56,14 @@ function PersonagemFormComponent({ editId }: PersonagemFormProps) {
     int: 0,
     sab: 0,
     car: 0,
-    raca_id: null,
-    classe_id: null,
-    origem_id: null,
-    divindade_id: null,
-    pontos_vida: 0,
-    pontos_mana: 0,
+    raca_id: undefined,
+    classe_id: undefined,
+    origem_id: undefined,
+    divindade_id: undefined,
+  });
+
+  const [baseAtributos, setBaseAtributos] = useState({
+    for: 0, des: 0, con: 0, int: 0, sab: 0, car: 0,
   });
 
   const [racas, setRacas] = useState<Raca[]>([]);
@@ -89,7 +92,7 @@ function PersonagemFormComponent({ editId }: PersonagemFormProps) {
 
   // Estado para perícias
   const [periciasEscolhidas, setPericiasEscolhidas] = useState<number[]>([]);
-  const [periciasDeRacaEscolhidas, setPericiasDeRacaEscolhidas] = useState<Pericia[]>([]);
+  const [periciasDeRacaEscolhidas, setPericiasDeRacaEscolhidas] = useState<number[]>([]);
 
   // Estado para poderes de classe selecionados
   const [poderesClasseSelecionados, setPoderesClasseSelecionados] = useState<number[]>([]);
@@ -111,18 +114,38 @@ function PersonagemFormComponent({ editId }: PersonagemFormProps) {
   );
 
   useEffect(() => {
-    setMounted(true);
+    const carregarDadosIniciais = async () => {
+        try {
+        await withLoading('dataLoading', async () => {
+            // Primeiro, carrega os dados básicos (raças, classes, etc)
+            const [racasData, classesData, origensData, divindadesData] = await Promise.all([
+            api.getRacas(),
+            api.getClasses(),
+            api.getOrigens(),
+            api.getDivindades()
+            ]);
+            setRacas(racasData);
+            setClasses(classesData);
+            setOrigens(origensData);
+            setDivindades(divindadesData);
 
-    // Se estiver editando, carregar dados do personagem
-    if (isEditing && originalPersonagemId) {
-      carregarPersonagemParaEdicao(originalPersonagemId);
-    } else {
-      // Verificar se há dados em cache para restaurar (apenas se não estiver editando)
-      if (hasCachedData() && cachedPersonagem) {
-        setShowRecoverButton(true);
-      }
-    }
-  }, []);
+            // DEPOIS de carregar os dados básicos, verifica se está em modo de edição
+            if (isEditing && originalPersonagemId) {
+            // Passa as raças já carregadas para a função de edição
+            await carregarPersonagemParaEdicao(originalPersonagemId, racasData);
+            } else if (hasCachedData() && cachedPersonagem) {
+            setShowRecoverButton(true);
+            }
+        });
+        } catch (error) {
+        console.error("Erro fatal ao carregar dados:", error);
+        setErrors({ geral: "Não foi possível carregar os dados básicos do jogo." });
+        }
+    };
+
+    setMounted(true);
+    carregarDadosIniciais();
+    }, []);
 
   // Auto-save no cache sempre que os dados mudarem
   useEffect(() => {
@@ -156,22 +179,69 @@ function PersonagemFormComponent({ editId }: PersonagemFormProps) {
     escolhasRaca,
     periciasEscolhidas,
     poderesClasseSelecionados,
-    poderesDivinosSelecionados,
-    savePersonagemCache
+    poderesDivinosSelecionados
   ]);
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      // Se a nova raça não tem atributos livres, limpar a seleção
-      if (!temAtributosLivres) {
-        setAtributosLivresEscolhidos([]);
-      } else {
-        // Se mudou para uma raça com atributos livres, reset a seleção
-        setAtributosLivresEscolhidos([]);
-      }
-      // Limpar escolhas de raça quando mudar de raça
-      setEscolhasRaca({});
+  // useEffect para calcular os atributos finais sempre que a base, raça ou livres mudarem
+    useEffect(() => {
+    // Pega os valores base atuais
+    const { for: baseFor, des: baseDes, con: baseCon, int: baseInt, sab: baseSab, car: baseCar } = baseAtributos;
+
+    // Calcula os bônus/penalidades
+    const bonus = { for: 0, des: 0, con: 0, int: 0, sab: 0, car: 0 };
+
+    if (racaSelecionada) {
+        const aplicarBonus = (attr: keyof typeof bonus, bonusValue: number) => {
+        bonus[attr] += bonusValue;
+        };
+
+        // Bônus Livres
+        if (temAtributosLivres) {
+        atributosLivresEscolhidos.forEach(attr => {
+            const key = attr.toLowerCase() as keyof typeof bonus;
+            if (bonus.hasOwnProperty(key)) {
+            aplicarBonus(key, 1);
+            }
+        });
+        }
+
+        // Bônus Fixos
+        if (racaSelecionada.atributo_bonus_1 && racaSelecionada.valor_bonus_1) aplicarBonus(racaSelecionada.atributo_bonus_1.toLowerCase() as keyof typeof bonus, racaSelecionada.valor_bonus_1);
+        if (racaSelecionada.atributo_bonus_2 && racaSelecionada.valor_bonus_2) aplicarBonus(racaSelecionada.atributo_bonus_2.toLowerCase() as keyof typeof bonus, racaSelecionada.valor_bonus_2);
+        if (racaSelecionada.atributo_bonus_3 && racaSelecionada.valor_bonus_3) aplicarBonus(racaSelecionada.atributo_bonus_3.toLowerCase() as keyof typeof bonus, racaSelecionada.valor_bonus_3);
+
+        // Penalidade
+        if (racaSelecionada.atributo_penalidade && racaSelecionada.valor_penalidade) {
+        const penalidadeKey = racaSelecionada.atributo_penalidade.toLowerCase() as keyof typeof bonus;
+        bonus[penalidadeKey] += racaSelecionada.valor_penalidade; // Geralmente penalidade é negativa
+        }
     }
-  }, [personagem.raca_id, temAtributosLivres]);
+
+    // Calcula os valores finais e atualiza o estado 'personagem'
+    setPersonagem(prev => ({
+        ...prev,
+        for: baseFor + bonus.for,
+        des: baseDes + bonus.des,
+        con: baseCon + bonus.con,
+        int: baseInt + bonus.int,
+        sab: baseSab + bonus.sab,
+        car: baseCar + bonus.car,
+    }));
+
+    }, [baseAtributos, racaSelecionada, atributosLivresEscolhidos]); // Dependências
+
+  useEffect(() => {
+    // Se for a montagem inicial do componente, simplesmente marca que não é mais
+    // e não executa o resto do código.
+    if (isInitialMount.current) {
+        isInitialMount.current = false;
+    } else {
+        // A partir da SEGUNDA renderização, qualquer mudança na raça
+        // irá limpar os dados com segurança.
+        setAtributosLivresEscolhidos([]);
+        setEscolhasRaca({});
+    }
+}, [personagem.raca_id]);
+
 
   // Reset poderes divinos quando mudar de divindade
   useEffect(() => {
@@ -180,76 +250,20 @@ function PersonagemFormComponent({ editId }: PersonagemFormProps) {
     }
   }, [personagem.divindade_id]);
 
-  useEffect(() => {
-    const carregarDados = async () => {
-      if (!mounted) return;
-
-      try {
-        await withLoading('dataLoading', async () => {
-          console.log("Iniciando carregamento de dados...");
-
-          const [racasData, classesData, origensData, divindadesData] = await Promise.all([
-            api.getRacas().catch(err => {
-              console.error("Erro ao carregar raças:", err);
-              throw new Error(`Erro ao carregar raças: ${err.message}`);
-            }),
-            api.getClasses().catch(err => {
-              console.error("Erro ao carregar classes:", err);
-              throw new Error(`Erro ao carregar classes: ${err.message}`);
-            }),
-            api.getOrigens().catch(err => {
-              console.error("Erro ao carregar origens:", err);
-              throw new Error(`Erro ao carregar origens: ${err.message}`);
-            }),
-            api.getDivindades().catch(err => {
-              console.error("Erro ao carregar divindades:", err);
-              throw new Error(`Erro ao carregar divindades: ${err.message}`);
-            }),
-          ]);
-
-          console.log("Dados carregados com sucesso:", {
-            racas: racasData.length,
-            classes: classesData.length,
-            origens: origensData.length,
-            divindades: divindadesData.length,
-          });
-
-          setRacas(racasData);
-          setClasses(classesData);
-          setOrigens(origensData);
-          setDivindades(divindadesData);
-          clearErrors(); // Limpar erros se carregar com sucesso
-        });
-      } catch (error) {
-        console.error("Erro detalhado ao carregar dados:", error);
-        setErrors({
-          geral: error instanceof Error ? error.message : "Erro desconhecido ao carregar dados básicos. Verifique se o backend está rodando.",
-        });
-      }
-    };
-
-    carregarDados();
-  }, [mounted, withLoading, clearErrors, setErrors]);
-
   // UseEffect para carregar habilidades quando personagem, raça, classe, origem, divindade ou nível mudarem
   useEffect(() => {
-    if (mounted && !isLoading('dataLoading')) {
+    if (mounted && !isLoading('dataLoading') &&
+        (personagem.raca_id || personagem.classe_id || personagem.origem_id || personagem.divindade_id)) {
       carregarTodasHabilidades();
     }
   }, [mounted, personagem.raca_id, personagem.classe_id, personagem.origem_id, personagem.divindade_id, personagem.nivel]);
 
   const validarFormulario = (): boolean => {
-    console.log('🔍 Iniciando validação...');
-    console.log('📊 Dados do personagem:', personagem);
-
     // Validação simplificada para debug
     if (!personagem.nome || personagem.nome.trim() === '') {
-      console.log('❌ Nome vazio');
       setErrors({ nome: 'Nome é obrigatório' });
       return false;
     }
-
-    console.log('✅ Validação simplificada passou');
     return true;
 
     // Comentando validação completa temporariamente
@@ -266,6 +280,8 @@ function PersonagemFormComponent({ editId }: PersonagemFormProps) {
     });
     */
   };
+  // ...
+
 
   const getQuantidadeAtributosLivres = (): number => {
     if (!racaSelecionada) return 0;
@@ -314,7 +330,6 @@ function PersonagemFormComponent({ editId }: PersonagemFormProps) {
         setPoderesDivinosSelecionados(cachedPersonagem.poderesDivinosSelecionados);
       }
 
-      console.log('📥 Dados restaurados do cache:', cachedPersonagem);
       setShowRecoverButton(false);
     }
   };
@@ -326,72 +341,161 @@ function PersonagemFormComponent({ editId }: PersonagemFormProps) {
   };
 
   // Função para carregar personagem para edição
-  const carregarPersonagemParaEdicao = async (id: number) => {
-    try {
-      await withLoading('dataLoading', async () => {
-        const personagemData = await api.getPersonagem(id);
+  const carregarPersonagemParaEdicao = async (id: number, racasData: Raca[]) => {
+  try {
+    await withLoading('dataLoading', async () => {
+      // 1. Buscamos os dados salvos do personagem
+      const personagemData = await api.getPersonagem(id);
 
-        // Carregar dados básicos
-        setPersonagem({
-          ...personagemData,
-          id: personagemData.id
-        });
+      // 2. Precisamos da raça completa para calcular os bônus
+      const racaDoPersonagem = racasData.find(r => getId(r) === personagemData.raca_id);
 
-        // Carregar escolhas raciais se existirem
-        if (personagemData.escolhas_raca && personagemData.escolhas_raca !== '{}') {
-          try {
-            const escolhasRaciais = JSON.parse(personagemData.escolhas_raca);
-            setEscolhasRaca(escolhasRaciais);
-            console.log('📥 Escolhas raciais carregadas:', escolhasRaciais);
-          } catch (e) {
-            console.warn('⚠️ Erro ao parsear escolhas raciais:', e);
+      // 3. Parse dos atributos livres salvos e guarda numa variável LOCAL
+      let atributosLivresCarregados: string[] = [];
+      if (personagemData.atributos_livres) {
+        try {
+          const parsed = typeof personagemData.atributos_livres === 'string'
+            ? JSON.parse(personagemData.atributos_livres)
+            : personagemData.atributos_livres;
+          if (Array.isArray(parsed)) {
+            atributosLivresCarregados = parsed;
+          }
+        } catch (e) { console.warn('⚠️ Erro ao parsear atributos livres:', e); }
+      }
+
+      // 4. LÓGICA DE CÁLCULO REVERSO (CORRIGIDA)
+      let atributosBaseCalculados = {
+        for: personagemData.for || 0, des: personagemData.des || 0,
+        con: personagemData.con || 0, int: personagemData.int || 0,
+        sab: personagemData.sab || 0, car: personagemData.car || 0,
+      };
+
+      if (racaDoPersonagem) {
+        // Esta função auxiliar agora usa 'atributosLivresCarregados' diretamente
+        const getBonusRacialParaAtributo = (atributo: string): number => {
+          let bonus = 0;
+          const temLivres = racaDoPersonagem.atributo_bonus_1?.toLowerCase() === 'livre';
+
+          // CORREÇÃO CRÍTICA: Usar a variável local 'atributosLivresCarregados'
+          // em vez do estado 'atributosLivresEscolhidos'
+          if (temLivres && atributosLivresCarregados.includes(atributo.toUpperCase())) {
+            bonus += 1;
+          }
+
+          if (racaDoPersonagem.atributo_bonus_1?.toLowerCase() === atributo) bonus += racaDoPersonagem.valor_bonus_1 || 0;
+          if (racaDoPersonagem.atributo_bonus_2?.toLowerCase() === atributo) bonus += racaDoPersonagem.valor_bonus_2 || 0;
+          if (racaDoPersonagem.atributo_bonus_3?.toLowerCase() === atributo) bonus += racaDoPersonagem.valor_bonus_3 || 0;
+          if (racaDoPersonagem.atributo_penalidade?.toLowerCase() === atributo) bonus += racaDoPersonagem.valor_penalidade || 0;
+
+          return bonus;
+        };
+
+        atributosBaseCalculados = {
+          for: (personagemData.for || 0) - getBonusRacialParaAtributo('for'),
+          des: (personagemData.des || 0) - getBonusRacialParaAtributo('des'),
+          con: (personagemData.con || 0) - getBonusRacialParaAtributo('con'),
+          int: (personagemData.int || 0) - getBonusRacialParaAtributo('int'),
+          sab: (personagemData.sab || 0) - getBonusRacialParaAtributo('sab'),
+          car: (personagemData.car || 0) - getBonusRacialParaAtributo('car'),
+        };
+      }
+
+      // 5. ATUALIZAR TODOS OS ESTADOS DE UMA VEZ NO FINAL
+      setPersonagem(personagemData);
+      setAtributosLivresEscolhidos(atributosLivresCarregados);
+      setBaseAtributos(atributosBaseCalculados);
+
+      // Forçar atualização dos atributos livres após um pequeno delay para garantir que o componente renderize corretamente
+      setTimeout(() => {
+        setAtributosLivresEscolhidos([...atributosLivresCarregados]);
+      }, 100);
+
+      // Carregar habilidades imediatamente após carregar os dados do personagem
+      console.log('🔄 Carregando habilidades para edição:', {
+        raca_id: personagemData.raca_id,
+        classe_id: personagemData.classe_id,
+        origem_id: personagemData.origem_id,
+        divindade_id: personagemData.divindade_id,
+        nivel: personagemData.nivel
+      });
+      await carregarTodasHabilidades(personagemData);
+
+      // Carregar o resto dos dados
+      // Carregar escolhas raciais usando o novo endpoint
+      try {
+        const escolhasRaciais = await api.getPersonagemEscolhasRaca(id);
+        if (escolhasRaciais.escolhas && Object.keys(escolhasRaciais.escolhas).length > 0) {
+          setEscolhasRaca(escolhasRaciais.escolhas);
+        } else {
+          // Fallback para campo escolhas_raca se endpoint retornar vazio
+          if (personagemData.escolhas_raca) {
+            try {
+              const escolhasParsed = JSON.parse(personagemData.escolhas_raca);
+              setEscolhasRaca(escolhasParsed);
+            } catch (e) {
+              console.warn('⚠️ Erro ao parsear escolhas_raca do personagem:', e);
+            }
           }
         }
-
-        // Carregar perícias se existirem
-        if (personagemData.pericias && Array.isArray(personagemData.pericias)) {
-          const periciasIds = personagemData.pericias.map((p: any) => getId(p));
-          setPericiasEscolhidas(periciasIds);
-          console.log('📥 Perícias carregadas:', periciasIds);
+      } catch (e) {
+        console.warn("Não foi possível carregar escolhas raciais do endpoint, tentando fallback");
+        // Fallback para campo escolhas_raca
+        if (personagemData.escolhas_raca) {
+          try {
+            const escolhasParsed = JSON.parse(personagemData.escolhas_raca);
+            setEscolhasRaca(escolhasParsed);
+          } catch (e) {
+            console.warn('⚠️ Erro ao parsear escolhas_raca do personagem:', e);
+          }
         }
+      }
 
-        // TODO: Carregar poderes de classe e divinos quando implementados no backend
+      if (personagemData.pericias) {
+        setPericiasEscolhidas(personagemData.pericias.map(p => getId(p)));
+      }
 
-        console.log('📥 Personagem carregado para edição:', personagemData);
-      });
-    } catch (error) {
-      console.error('❌ Erro ao carregar personagem:', error);
-      setErrors({
-        geral: "Erro ao carregar personagem para edição. Verifique se o personagem existe.",
-      });
-    }
-  };
+      // Carregar poderes
+      try {
+        const poderesDivinos = await api.getPersonagemPoderesDivinos(id);
+        if (poderesDivinos.poderes_ids) setPoderesDivinosSelecionados(poderesDivinos.poderes_ids);
+      } catch (e) { console.warn("Não foi possível carregar poderes divinos"); }
+
+      try {
+        const poderesClasse = await api.getPersonagemPoderesClasse(id);
+        if (poderesClasse.poderes_ids) setPoderesClasseSelecionados(poderesClasse.poderes_ids);
+      } catch (e) { console.warn("Não foi possível carregar poderes de classe"); }
+
+    });
+  } catch (error) {
+    console.error('❌ Erro ao carregar personagem:', error);
+    setErrors({ geral: "Erro ao carregar personagem para edição." });
+  }
+};
+
 
   const handleSubmit = async () => {
-    console.log('🚀 Iniciando handleSubmit...');
-    console.log('📊 Estado atual do personagem:', personagem);
-
     const validacao = validarFormulario();
-    console.log('✅ Resultado da validação:', validacao);
-
     if (!validacao) {
-      console.log('❌ Validação falhou, interrompendo...');
       return;
     }
 
-    console.log('✅ Validação passou, continuando...');
-
     try {
       await withLoading('createPersonagem', async () => {
+        // Validar campos obrigatórios
+        if (!personagem.raca_id || !personagem.classe_id || !personagem.origem_id) {
+          setErrors({ geral: "Raça, classe e origem são obrigatórias." });
+          return;
+        }
+
         // Preparar dados completos do personagem
         const personagemData = {
           ...personagem,
-          raca_id: personagem.raca_id || 1,
-          classe_id: personagem.classe_id || 1,
-          origem_id: personagem.origem_id || 1,
-          divindade_id: personagem.divindade_id || undefined,
+          raca_id: personagem.raca_id,
+          classe_id: personagem.classe_id,
+          origem_id: personagem.origem_id,
+          divindade_id: personagem.divindade_id || null,
           // Dados de atributos livres
-          atributosLivres: temAtributosLivres ? atributosLivresEscolhidos : undefined,
+          atributosLivres: temAtributosLivres ? atributosLivresEscolhidos : [],
           // Escolhas raciais (incluindo versatilidade e lefou)
           escolhas_raca: Object.keys(escolhasRaca).length > 0 ? JSON.stringify(escolhasRaca) : "{}",
           // Perícias selecionadas
@@ -401,26 +505,80 @@ function PersonagemFormComponent({ editId }: PersonagemFormProps) {
           // Poderes divinos selecionados
           poderes_divinos: poderesDivinosSelecionados,
           // PV e PM calculados
-          pontos_vida: calculateTotalPV(),
-          pontos_mana: calculateTotalPM()
+          pv_total: calculateTotalPV(),
+          pm_total: calculateTotalPM()
         };
-
-        console.log('📝 Dados completos do personagem:', personagemData);
 
         let resultPersonagem;
         if (isEditing && originalPersonagemId) {
-          console.log('✏️ Modo edição - atualizando personagem...');
-          // Atualizar personagem existente
-          resultPersonagem = await api.updatePersonagem(originalPersonagemId, personagemData as Personagem);
-          console.log('✅ Personagem atualizado:', resultPersonagem);
-        } else {
-          console.log('🆕 Modo criação - criando novo personagem...');
-          // Criar novo personagem
-          console.log('📡 Chamando API createPersonagem com dados:', personagemData);
+          // Preparar estrutura correta para o backend (PersonagemRequest) - estrutura plana
+          const updateData = {
+            // Dados do personagem (estrutura plana como esperado pelo backend)
+            nome: personagemData.nome,
+            nivel: personagemData.nivel,
+            for: personagemData.for,
+            des: personagemData.des,
+            con: personagemData.con,
+            int: personagemData.int,
+            sab: personagemData.sab,
+            car: personagemData.car,
+            raca_id: personagemData.raca_id,
+            classe_id: personagemData.classe_id,
+            origem_id: personagemData.origem_id,
+            divindade_id: personagemData.divindade_id,
+            escolhas_raca: personagemData.escolhas_raca,
+            // Dados complementares
+            atributosLivres: personagemData.atributosLivres || [],
+            pericias_selecionadas: personagemData.pericias_selecionadas || [],
+            poderes_classe: personagemData.poderes_classe || [],
+            poderes_divinos: personagemData.poderes_divinos || []
+          };
 
+          // Atualizar personagem existente
+          resultPersonagem = await api.updatePersonagem(originalPersonagemId, updateData);
+        } else {
           try {
-            resultPersonagem = await api.createPersonagem(personagemData as Personagem);
-            console.log('✅ Personagem criado com sucesso:', resultPersonagem);
+            // Preparar dados para criação (estrutura correta para PersonagemRequest)
+            const createData: any = {
+              nome: personagemData.nome,
+              nivel: personagemData.nivel || 1,
+              for: personagemData.for,
+              des: personagemData.des,
+              con: personagemData.con,
+              int: personagemData.int,
+              sab: personagemData.sab,
+              car: personagemData.car,
+              raca_id: personagemData.raca_id,
+              classe_id: personagemData.classe_id,
+              origem_id: personagemData.origem_id,
+              escolhas_raca: personagemData.escolhas_raca || "{}",
+              atributosLivres: personagemData.atributosLivres || [],
+              pericias_selecionadas: personagemData.pericias_selecionadas || [],
+              poderes_classe: personagemData.poderes_classe || [],
+              poderes_divinos: personagemData.poderes_divinos || []
+            };
+
+            // Só incluir divindade_id se realmente houver uma divindade selecionada
+            if (personagemData.divindade_id && personagemData.divindade_id > 0) {
+              createData.divindade_id = personagemData.divindade_id;
+            }
+
+            // Validação básica dos campos obrigatórios
+            if (!createData.nome || createData.nome.trim() === '') {
+              throw new Error('Nome é obrigatório');
+            }
+            if (!createData.raca_id || createData.raca_id === 0) {
+              throw new Error('Raça é obrigatória');
+            }
+            if (!createData.classe_id || createData.classe_id === 0) {
+              throw new Error('Classe é obrigatória');
+            }
+            if (!createData.origem_id || createData.origem_id === 0) {
+              throw new Error('Origem é obrigatória');
+            }
+
+            console.log('📤 Dados enviados para API:', createData);
+            resultPersonagem = await api.createPersonagem(createData as any);
           } catch (apiError) {
             console.error('❌ Erro na API createPersonagem:', apiError);
             throw apiError;
@@ -432,7 +590,6 @@ function PersonagemFormComponent({ editId }: PersonagemFormProps) {
 
         // Salvar perícias do personagem
         if (periciasEscolhidas.length > 0) {
-          console.log('💾 Salvando perícias:', periciasEscolhidas);
           savePromises.push(
             api.savePersonagemPericias(resultPersonagem.id!, periciasEscolhidas)
               .then(() => console.log('✅ Perícias salvas com sucesso'))
@@ -447,53 +604,39 @@ function PersonagemFormComponent({ editId }: PersonagemFormProps) {
 
         // Salvar poderes de classe se houver
         if (poderesClasseSelecionados.length > 0) {
-          console.log('⚠️ ENDPOINT FALTANDO: /api/v1/personagens/:id/poderes-classe');
-          console.log('💾 Poderes de classe que deveriam ser salvos:', poderesClasseSelecionados);
-          // TODO: Implementar endpoint no backend
-          /*
           savePromises.push(
-            fetch(`${API_BASE_URL}/api/v1/personagens/${resultPersonagem.id}/poderes-classe`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ poderes_ids: poderesClasseSelecionados }),
-            }).then(() => console.log('✅ Poderes de classe salvos com sucesso'))
-              .catch(error => console.error('❌ Erro ao salvar poderes de classe:', error))
+            api.savePersonagemPoderesClasse(resultPersonagem.id!, poderesClasseSelecionados)
+              .then(() => console.log('✅ Poderes de classe salvos com sucesso'))
+              .catch(error => {
+                console.error('❌ Erro ao salvar poderes de classe:', error);
+                console.error('❌ Dados enviados:', { poderes_ids: poderesClasseSelecionados });
+              })
           );
-          */
+        } else {
+          console.log('⚠️ Nenhum poder de classe selecionado para salvar');
         }
 
         // Salvar poderes divinos se houver
         if (poderesDivinosSelecionados.length > 0) {
-          console.log('⚠️ ENDPOINT FALTANDO: /api/v1/personagens/:id/poderes-divinos');
-          console.log('💾 Poderes divinos que deveriam ser salvos:', poderesDivinosSelecionados);
-          // TODO: Implementar endpoint no backend
-          /*
           savePromises.push(
-            fetch(`${API_BASE_URL}/api/v1/personagens/${resultPersonagem.id}/poderes-divinos`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ poderes_ids: poderesDivinosSelecionados }),
-            }).then(() => console.log('✅ Poderes divinos salvos com sucesso'))
-              .catch(error => console.error('❌ Erro ao salvar poderes divinos:', error))
+            api.savePersonagemPoderesDivinos(resultPersonagem.id!, poderesDivinosSelecionados)
+              .then(() => console.log('✅ Poderes divinos salvos com sucesso'))
+              .catch(error => {
+                console.error('❌ Erro ao salvar poderes divinos:', error);
+                console.error('❌ Dados enviados:', { poderes_ids: poderesDivinosSelecionados });
+              })
           );
-          */
+        } else {
+          console.log('⚠️ Nenhum poder divino selecionado para salvar');
         }
 
         // Salvar escolhas raciais especiais se houver
         if (Object.keys(escolhasRaca).length > 0) {
-          console.log('⚠️ ENDPOINT FALTANDO: /api/v1/personagens/:id/escolhas-raca');
-          console.log('💾 Escolhas raciais que deveriam ser salvas:', escolhasRaca);
-          // TODO: Implementar endpoint no backend
-          /*
           savePromises.push(
-            fetch(`${API_BASE_URL}/api/v1/personagens/${resultPersonagem.id}/escolhas-raca`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ escolhas: escolhasRaca }),
-            }).then(() => console.log('✅ Escolhas raciais salvas com sucesso'))
+            api.savePersonagemEscolhasRaca(resultPersonagem.id, escolhasRaca)
+              .then(() => console.log('✅ Escolhas raciais salvas com sucesso'))
               .catch(error => console.error('❌ Erro ao salvar escolhas raciais:', error))
           );
-          */
         }
 
         // Aguardar todas as operações de salvamento
@@ -530,12 +673,10 @@ function PersonagemFormComponent({ editId }: PersonagemFormProps) {
       int: 0,
       sab: 0,
       car: 0,
-      raca_id: null,
-      classe_id: null,
-      origem_id: null,
-      divindade_id: null,
-      pontos_vida: 0,
-      pontos_mana: 0,
+      raca_id: undefined,
+      classe_id: undefined,
+      origem_id: undefined,
+      divindade_id: undefined,
     });
     setAtributosLivresEscolhidos([]);
     setPericiasEscolhidas([]);
@@ -543,20 +684,6 @@ function PersonagemFormComponent({ editId }: PersonagemFormProps) {
     setPoderesDivinosSelecionados([]);
     setPoderesClasseSelecionados([]);
     setErrors({});
-  };
-
-  const handleAtributosChange = (atributos: {
-    for: number;
-    des: number;
-    con: number;
-    int: number;
-    sab: number;
-    car: number;
-  }) => {
-    setPersonagem(prev => ({
-      ...prev,
-      ...atributos,
-    }));
   };
 
   const handleAtributosLivresChange = (atributos: string[]) => {
@@ -568,7 +695,6 @@ function PersonagemFormComponent({ editId }: PersonagemFormProps) {
 
     // Extrair perícias das escolhas de raça
     const periciasDeRaca: number[] = [];
-    const periciasDeRacaObjetos: Pericia[] = [];
 
     Object.values(escolhas).forEach((escolha: any) => {
       if (escolha.pericias && Array.isArray(escolha.pericias)) {
@@ -577,14 +703,15 @@ function PersonagemFormComponent({ editId }: PersonagemFormProps) {
             periciasDeRaca.push(pericia);
           } else if (pericia.id) {
             periciasDeRaca.push(pericia.id);
-            periciasDeRacaObjetos.push(pericia);
           }
         });
       }
     });
 
-    // Armazenar os objetos completos das perícias de raça
-    setPericiasDeRacaEscolhidas(periciasDeRacaObjetos);    // Combinar perícias já escolhidas com as das escolhas de raça
+    // Armazenar os IDs das perícias de raça
+    setPericiasDeRacaEscolhidas(periciasDeRaca);
+
+    // Combinar perícias mantendo as de classe e adicionando as de raça
     setPericiasEscolhidas(prev => {
       // Remover perícias de raça antigas primeiro
       const periciasNaoDeRaca = prev.filter(id => !getPericiasDeRacaAnteriores().includes(id));
@@ -612,125 +739,47 @@ function PersonagemFormComponent({ editId }: PersonagemFormProps) {
 
   const calculateTotalPV = (): number => {
     const classeEscolhida = classes.find(c => getId(c) === personagem.classe_id);
-    const basePV = classeEscolhida?.pvpornivel || 0;
+    if (!classeEscolhida) return 0;
 
-    console.log('🔍 Debug PV completo:', {
-      classeId: personagem.classe_id,
-      classesDisponiveis: classes.map(c => ({ id: getId(c), nome: c.nome, pv: c.pvpornivel })),
-      classeEscolhida: classeEscolhida ? { nome: classeEscolhida.nome, pvpornivel: classeEscolhida.pvpornivel } : null,
-      basePV,
-      personagemCon: personagem.con,
-      personagemNivel: personagem.nivel
-    });
+    const basePV = classeEscolhida.pvpornivel || 0;
+    // 'personagem.con' já é o valor final (base + bônus), calculado pelo useEffect.
+    const modConFinal = personagem.con || 0;
 
-    // No Tormenta20, modificador é igual ao valor do atributo
-    const modCon = personagem.con || 0;
-
-    // Aplicar bônus racial de CON se houver
-    const racaEscolhida = racas.find(r => getId(r) === personagem.raca_id);
-    let bonusRacialCon = 0;
-    if (racaEscolhida) {
-      // Verificar se CON está nos atributos livres escolhidos
-      if (temAtributosLivres && atributosLivresEscolhidos.includes('CON')) {
-        bonusRacialCon += 1;
-      } else {
-        // Verificar bônus fixos
-        if (racaEscolhida.atributo_bonus_1?.toLowerCase() === 'con') {
-          bonusRacialCon += racaEscolhida.valor_bonus_1 || 0;
-        }
-        if (racaEscolhida.atributo_bonus_2?.toLowerCase() === 'con') {
-          bonusRacialCon += racaEscolhida.valor_bonus_2 || 0;
-        }
-      }
-    }
-
-    const modConFinal = modCon + bonusRacialCon;
-    const resultado = (basePV + modConFinal) * (personagem.nivel || 1);
-
-    console.log('🔍 Cálculo PV final:', {
-      basePV,
-      modCon,
-      bonusRacialCon,
-      modConFinal,
-      nivel: personagem.nivel || 1,
-      resultado
-    });
-
-    // Fórmula correta do Tormenta20:
-    // PV Total = (PV base da classe + mod CON) × nível
-    // O modificador de CON é somado a cada nível
-    return resultado;
+    return (basePV + modConFinal) * (personagem.nivel || 1);
   };
 
   const calculateTotalPM = (): number => {
     const classeEscolhida = classes.find(c => getId(c) === personagem.classe_id);
     const basePM = classeEscolhida?.pmpornivel || 0;
+    const resultado = (basePM) * (personagem.nivel || 1);
 
-    console.log('🔍 Debug PM completo:', {
-      classeId: personagem.classe_id,
-      classesDisponiveis: classes.map(c => ({ id: getId(c), nome: c.nome, pm: c.pmpornivel })),
-      classeEscolhida: classeEscolhida ? { nome: classeEscolhida.nome, pmpornivel: classeEscolhida.pmpornivel } : null,
-      basePM,
-      personagemInt: personagem.int,
-      personagemNivel: personagem.nivel
-    });
-
-    // No Tormenta20, modificador é igual ao valor do atributo
-    const modInt = personagem.int || 0;
-
-    // Aplicar bônus racial de INT se houver
-    const racaEscolhida = racas.find(r => getId(r) === personagem.raca_id);
-    let bonusRacialInt = 0;
-    if (racaEscolhida) {
-      // Verificar se INT está nos atributos livres escolhidos
-      if (temAtributosLivres && atributosLivresEscolhidos.includes('INT')) {
-        bonusRacialInt += 1;
-      } else {
-        // Verificar bônus fixos
-        if (racaEscolhida.atributo_bonus_1?.toLowerCase() === 'int') {
-          bonusRacialInt += racaEscolhida.valor_bonus_1 || 0;
-        }
-        if (racaEscolhida.atributo_bonus_2?.toLowerCase() === 'int') {
-          bonusRacialInt += racaEscolhida.valor_bonus_2 || 0;
-        }
-      }
-    }
-
-    const modIntFinal = modInt + bonusRacialInt;
-    const resultado = (basePM + modIntFinal) * (personagem.nivel || 1);
-
-    console.log('🔍 Cálculo PM final:', {
-      basePM,
-      modInt,
-      bonusRacialInt,
-      modIntFinal,
-      nivel: personagem.nivel || 1,
-      resultado
-    });
-
-    // Fórmula correta do Tormenta20:
-    // PM Total = (PM base da classe + mod INT) × nível
-    // O modificador de INT é somado a cada nível
     return resultado;
   };
+
+
+
 
   // Funções para carregar habilidades da API
   const carregarHabilidadesRaca = async (racaId: number) => {
     try {
+      console.log('🏃 Carregando habilidades da raça:', racaId);
       const habilidades = await api.getHabilidadesRaca(racaId);
+      console.log('✅ Habilidades da raça carregadas:', habilidades);
       setHabilidadesRaca(habilidades);
     } catch (error) {
-      console.error('Erro ao carregar habilidades da raça:', error);
+      console.error('❌ Erro ao carregar habilidades da raça:', error);
       setHabilidadesRaca([]);
     }
   };
 
   const carregarHabilidadesClasse = async (classeId: number, nivel: number) => {
     try {
+      console.log('⚔️ Carregando habilidades da classe:', classeId, 'nível:', nivel);
       const habilidades = await api.getHabilidadesClasse(classeId, nivel);
+      console.log('✅ Habilidades da classe carregadas:', habilidades);
       setHabilidadesClasse(habilidades);
     } catch (error) {
-      console.error('Erro ao carregar habilidades da classe:', error);
+      console.error('❌ Erro ao carregar habilidades da classe:', error);
       setHabilidadesClasse([]);
     }
   };
@@ -756,25 +805,28 @@ function PersonagemFormComponent({ editId }: PersonagemFormProps) {
   };
 
   // Função para carregar todas as habilidades quando os dados mudarem
-  const carregarTodasHabilidades = async () => {
+  const carregarTodasHabilidades = async (dadosPersonagem?: any) => {
     try {
       await withLoading('habilidades', async () => {
         const promises = [];
 
-        if (personagem.raca_id && personagem.raca_id > 0) {
-          promises.push(carregarHabilidadesRaca(personagem.raca_id));
+        // Usar dadosPersonagem se fornecido, senão usar o estado atual
+        const dados = dadosPersonagem || personagem;
+
+        if (dados.raca_id && dados.raca_id > 0) {
+          promises.push(carregarHabilidadesRaca(dados.raca_id));
         }
 
-        if (personagem.classe_id && personagem.classe_id > 0 && personagem.nivel) {
-          promises.push(carregarHabilidadesClasse(personagem.classe_id, personagem.nivel));
+        if (dados.classe_id && dados.classe_id > 0 && dados.nivel) {
+          promises.push(carregarHabilidadesClasse(dados.classe_id, dados.nivel));
         }
 
-        if (personagem.origem_id && personagem.origem_id > 0) {
-          promises.push(carregarHabilidadesOrigem(personagem.origem_id));
+        if (dados.origem_id && dados.origem_id > 0) {
+          promises.push(carregarHabilidadesOrigem(dados.origem_id));
         }
 
-        if (personagem.divindade_id && personagem.divindade_id > 0 && personagem.nivel) {
-          promises.push(carregarHabilidadesDivindade(personagem.divindade_id, personagem.nivel));
+        if (dados.divindade_id && dados.divindade_id > 0 && dados.nivel) {
+          promises.push(carregarHabilidadesDivindade(dados.divindade_id, dados.nivel));
         }
 
         await Promise.all(promises);
@@ -917,7 +969,7 @@ function PersonagemFormComponent({ editId }: PersonagemFormProps) {
                 <select
                   value={personagem.raca_id ? String(personagem.raca_id) : ""}
                   onChange={(e) => {
-                    const value = e.target.value ? parseInt(e.target.value) : null;
+                    const value = e.target.value ? parseInt(e.target.value) : undefined;
                     setPersonagem(prev => ({ ...prev, raca_id: value }));
                   }}
                   className={`w-full p-3 border rounded-lg text-black ${
@@ -1007,7 +1059,7 @@ function PersonagemFormComponent({ editId }: PersonagemFormProps) {
                 <select
                   value={personagem.classe_id ? String(personagem.classe_id) : ""}
                   onChange={(e) => {
-                    const value = e.target.value ? parseInt(e.target.value) : null;
+                    const value = e.target.value ? parseInt(e.target.value) : undefined;
                     setPersonagem(prev => ({ ...prev, classe_id: value }));
                   }}
                   className={`w-full p-3 border rounded-lg text-black ${
@@ -1030,11 +1082,6 @@ function PersonagemFormComponent({ editId }: PersonagemFormProps) {
                   <div className="mt-2 p-2 bg-gray-50 rounded text-sm text-gray-700">
                     {(() => {
                       const classeEncontrada = classes.find(c => getId(c) === personagem.classe_id);
-                      console.log('🔍 Debug classe:', {
-                        classeId: personagem.classe_id,
-                        classeEncontrada,
-                        classes: classes.map(c => ({ id: getId(c), nome: c.nome, pv: c.pvpornivel, pm: c.pmpornivel }))
-                      });
                       return (
                         <>
                           <strong>{classeEncontrada?.nome}</strong>
@@ -1073,7 +1120,7 @@ function PersonagemFormComponent({ editId }: PersonagemFormProps) {
                 <select
                   value={personagem.origem_id ? String(personagem.origem_id) : ""}
                   onChange={(e) => {
-                    const value = e.target.value ? parseInt(e.target.value) : null;
+                    const value = e.target.value ? parseInt(e.target.value) : undefined;
                     setPersonagem(prev => ({ ...prev, origem_id: value }));
                   }}
                   className={`w-full p-3 border rounded-lg text-black ${
@@ -1117,7 +1164,7 @@ function PersonagemFormComponent({ editId }: PersonagemFormProps) {
                 <select
                   value={personagem.divindade_id ? String(personagem.divindade_id) : ""}
                   onChange={(e) => {
-                    const valor = e.target.value ? parseInt(e.target.value) : null;
+                    const valor = e.target.value ? parseInt(e.target.value) : undefined;
                     setPersonagem(prev => ({
                       ...prev,
                       divindade_id: valor
@@ -1155,7 +1202,6 @@ function PersonagemFormComponent({ editId }: PersonagemFormProps) {
                     poderesSelecionados={poderesDivinosSelecionados}
                     onPoderesSelecionados={(poderesOpcionais) => {
                       setPoderesDivinosSelecionados(poderesOpcionais);
-                      console.log('Poderes divinos opcionais selecionados:', poderesOpcionais);
                     }}
                   />
                 )}
@@ -1177,18 +1223,11 @@ function PersonagemFormComponent({ editId }: PersonagemFormProps) {
           <div className="bg-white rounded-lg shadow-lg p-6">
             <h2 className="text-2xl font-semibold mb-6 text-black">Atributos</h2>
             <PointBuyCalculator
-              atributos={{
-                for: personagem.for || 0,
-                des: personagem.des || 0,
-                con: personagem.con || 0,
-                int: personagem.int || 0,
-                sab: personagem.sab || 0,
-                car: personagem.car || 0,
-              }}
-              onChange={handleAtributosChange}
+              atributos={baseAtributos}
+              onChange={setBaseAtributos}
               racaSelecionada={racaSelecionada}
               atributosLivresEscolhidos={atributosLivresEscolhidos}
-              onAtributosLivresChange={handleAtributosLivresChange}
+              onAtributosLivresChange={setAtributosLivresEscolhidos}
             />
 
             {/* Stats Preview */}
@@ -1281,13 +1320,11 @@ function PersonagemFormComponent({ editId }: PersonagemFormProps) {
                 />
               )}
 
-              {/* Mensagem quando não há habilidades */}
-              {habilidadesRaca.length === 0 && habilidadesClasse.length === 0 &&
-               habilidadesOrigem.length === 0 &&
-               personagem.raca_id && personagem.classe_id && (
+              {/* Mensagem quando não há habilidades - só mostrar se não há NADA selecionado */}
+              {(!personagem.raca_id || !personagem.classe_id) && (
                 <div className="col-span-full text-center py-8 text-gray-500">
-                  <p>Não há habilidades disponíveis para as seleções atuais.</p>
-                  <p className="text-sm">Certifique-se de que raça, classe e nível estão selecionados.</p>
+                  <p>Selecione raça e classe para ver as habilidades disponíveis.</p>
+                  <p className="text-sm">As habilidades aparecerão automaticamente conforme você faz as seleções.</p>
                 </div>
               )}
             </div>
@@ -1368,7 +1405,6 @@ function PersonagemFormComponent({ editId }: PersonagemFormProps) {
             type="submit"
             onClick={(e) => {
               e.preventDefault();
-              console.log('🔘 Botão clicado!');
               handleSubmit();
             }}
             disabled={isLoading('createPersonagem')}

@@ -42,14 +42,11 @@ const SeletorPoderesDivinos: React.FC<SeletorPoderesDivinosProps> = ({
       try {
         // Carregar todos os poderes da divindade até o nível atual
         const url = `${API_BASE_URL}/api/v1/habilidades/divindade/${divindadeId}/nivel/${nivelPersonagem}`;
-        console.log('Carregando poderes da URL:', url);
 
         const response = await fetch(url);
-        console.log('Resposta da API:', response.status, response.statusText);
 
         if (response.ok) {
           const poderesData = await response.json();
-          console.log('Dados dos poderes recebidos:', poderesData);
           setPoderes(poderesData);
         } else {
           const errorText = await response.text();

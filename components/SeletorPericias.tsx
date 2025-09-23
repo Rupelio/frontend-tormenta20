@@ -17,7 +17,7 @@ interface SeletorPericiasProps {
   origemId: number | null;
   periciasEscolhidas: number[];
   onPericiasChange: (pericias: number[]) => void;
-  periciasDeRaca?: Pericia[]; // Perícias vindas das escolhas de raça
+  periciasDeRaca?: number[]; // IDs das perícias vindas das escolhas de raça
 }
 
 export default function SeletorPericias({
@@ -33,10 +33,28 @@ export default function SeletorPericias({
   const [quantidadePericias, setQuantidadePericias] = useState(2);
   const [loading, setLoading] = useState(false);
 
-  // Reset perícias escolhidas quando classe mudar
+  // Converter IDs das perícias de raça em objetos
+  const periciasDeRacaObjetos = periciasDeRaca
+    .map(id => periciasDisponiveis.find(p => p.id === id))
+    .filter(Boolean) as Pericia[];
+
+  // Reset apenas perícias de classe quando classe mudar
   useEffect(() => {
-    onPericiasChange([]);
-  }, [classeId]); // Remove onPericiasChange da dependência para evitar loops
+    if (classeId) {
+      // Manter apenas perícias que não são de classe (perícias de raça, origem e automáticas)
+      const periciasNaoDeClasse = periciasEscolhidas.filter(id => {
+        // Manter se for perícia de raça escolhida (versatilidade)
+        const ehPericiaDaRaca = periciasDeRacaObjetos.some(racaPericia => racaPericia.id === id);
+        // Manter se for perícia automática
+        const ehAutomatica = periciasAutomaticas.some(auto => auto.id === id);
+
+        return ehPericiaDaRaca || ehAutomatica;
+      });
+      onPericiasChange(periciasNaoDeClasse);
+    } else {
+      onPericiasChange([]);
+    }
+  }, [classeId, periciasDeRacaObjetos.length, periciasAutomaticas.length]);
 
   // Buscar todas as perícias quando qualquer ID mudar
   useEffect(() => {
@@ -127,10 +145,10 @@ export default function SeletorPericias({
     fetchTodasPericias();
   }, [classeId, racaId, origemId]);
 
-  // Filtrar perícias disponíveis removendo as automáticas e as de raça
+  // Filtrar perícias disponíveis removendo apenas as automáticas (não as de raça)
+  // Perícias de raça são adicionais e não devem competir com as de classe
   const periciasParaEscolher = periciasDisponiveis.filter(
-    pericia => !periciasAutomaticas.some(auto => auto.id === pericia.id) &&
-               !periciasDeRaca.some(racaPericia => racaPericia.id === pericia.id)
+    pericia => !periciasAutomaticas.some(auto => auto.id === pericia.id)
   );
 
   // Handle seleção de perícia
@@ -139,8 +157,18 @@ export default function SeletorPericias({
       ? periciasEscolhidas.filter(id => id !== periciaId)
       : [...periciasEscolhidas, periciaId];
 
-    // Limitar ao número máximo permitido
-    if (novasEscolhidas.length <= quantidadePericias) {
+    // Contar apenas perícias de classe (excluir perícias de raça e automáticas)
+    const periciasDeClasseEscolhidas = novasEscolhidas.filter(id => {
+      // Não contar se for perícia de raça (versatilidade)
+      const ehPericiaDaRaca = periciasDeRacaObjetos.some(racaPericia => racaPericia.id === id);
+      // Não contar se for perícia automática
+      const ehAutomatica = periciasAutomaticas.some(auto => auto.id === id);
+
+      return !ehPericiaDaRaca && !ehAutomatica;
+    });
+
+    // Limitar ao número máximo permitido apenas para perícias de classe
+    if (periciasDeClasseEscolhidas.length <= quantidadePericias) {
       onPericiasChange(novasEscolhidas);
     }
   };
@@ -172,7 +200,11 @@ export default function SeletorPericias({
           Perícias
         </h3>
         <span className="text-sm text-gray-600">
-          {periciasEscolhidas.length}/{quantidadePericias} escolhidas
+          {periciasEscolhidas.filter(id => {
+            const ehPericiaDaRaca = periciasDeRacaObjetos.some(racaPericia => racaPericia.id === id);
+            const ehAutomatica = periciasAutomaticas.some(auto => auto.id === id);
+            return !ehPericiaDaRaca && !ehAutomatica;
+          }).length}/{quantidadePericias} de classe escolhidas
         </span>
       </div>
 
@@ -209,13 +241,13 @@ export default function SeletorPericias({
       )}
 
       {/* Perícias de Raça Escolhidas */}
-      {periciasDeRaca && periciasDeRaca.length > 0 && (
+      {periciasDeRacaObjetos && periciasDeRacaObjetos.length > 0 && (
         <div>
           <h4 className="text-md font-medium text-gray-800 mb-3">
             Perícias Escolhidas da Raça
           </h4>
           <div className="grid gap-2">
-            {periciasDeRaca.map((pericia, index) => (
+            {periciasDeRacaObjetos.map((pericia, index) => (
               <div
                 key={`raca-${index}`}
                 className="flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded-lg"
@@ -259,7 +291,18 @@ export default function SeletorPericias({
           <div className="grid gap-2">
             {periciasParaEscolher.map((pericia) => {
               const isSelected = periciasEscolhidas.includes(pericia.id);
-              const canSelect = isSelected || periciasEscolhidas.length < quantidadePericias;
+
+              // Contar apenas perícias de classe para verificar se pode selecionar mais
+              const periciasDeClasseAtual = periciasEscolhidas.filter(id => {
+                // Não contar se for perícia de raça (versatilidade)
+                const ehPericiaDaRaca = periciasDeRacaObjetos.some(racaPericia => racaPericia.id === id);
+                // Não contar se for perícia automática
+                const ehAutomatica = periciasAutomaticas.some(auto => auto.id === id);
+
+                return !ehPericiaDaRaca && !ehAutomatica;
+              });
+
+              const canSelect = isSelected || periciasDeClasseAtual.length < quantidadePericias;
 
               return (
                 <button

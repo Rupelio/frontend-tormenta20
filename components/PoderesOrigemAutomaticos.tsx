@@ -26,14 +26,11 @@ const PoderesOrigemAutomaticos: React.FC<PoderesOrigemAutomaticosProps> = ({
 
       try {
         const url = `${API_BASE_URL}/api/v1/poderes/origem/${origemId}`;
-        console.log('Carregando poderes da origem:', url);
 
         const response = await fetch(url);
-        console.log('Resposta da API:', response.status, response.statusText);
 
         if (response.ok) {
           const poderesData = await response.json();
-          console.log('Poderes de origem recebidos:', poderesData);
           setPoderes(poderesData);
         } else {
           const errorText = await response.text();

@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Raca } from "@/types";
 
 interface SeletorAtributosLivresProps {
@@ -14,6 +14,13 @@ const SeletorAtributosLivres: React.FC<SeletorAtributosLivresProps> = ({
   atributosEscolhidos,
   onChange
 }) => {
+  // Estado local para forçar re-render
+  const [atributosInternos, setAtributosInternos] = useState<string[]>(atributosEscolhidos);
+
+  // Sincronizar com props quando mudarem
+  useEffect(() => {
+    setAtributosInternos(atributosEscolhidos);
+  }, [atributosEscolhidos]);
   // Identificar qual atributo tem penalidade (não pode ser escolhido)
   const atributoComPenalidade = raca.atributo_penalidade?.toUpperCase();
 
@@ -45,19 +52,20 @@ const SeletorAtributosLivres: React.FC<SeletorAtributosLivresProps> = ({
   const handleAtributoToggle = (atributo: string) => {
     let novosAtributos: string[];
 
-    if (atributosEscolhidos.includes(atributo)) {
+    if (atributosInternos.includes(atributo)) {
       // Remover atributo se já estiver selecionado
-      novosAtributos = atributosEscolhidos.filter(attr => attr !== atributo);
+      novosAtributos = atributosInternos.filter(attr => attr !== atributo);
     } else {
       // Adicionar atributo se não estiver selecionado
-      if (atributosEscolhidos.length < quantidadeNecessaria) {
-        novosAtributos = [...atributosEscolhidos, atributo];
+      if (atributosInternos.length < quantidadeNecessaria) {
+        novosAtributos = [...atributosInternos, atributo];
       } else {
         // Se já tem o máximo, substituir o primeiro
-        novosAtributos = [...atributosEscolhidos.slice(1), atributo];
+        novosAtributos = [...atributosInternos.slice(1), atributo];
       }
     }
 
+    setAtributosInternos(novosAtributos);
     onChange(novosAtributos);
   };
 
@@ -72,8 +80,8 @@ const SeletorAtributosLivres: React.FC<SeletorAtributosLivresProps> = ({
 
       <div className="grid grid-cols-2 gap-2">
         {atributosDisponiveis.map(atributo => {
-          const isSelected = atributosEscolhidos.includes(atributo.key);
-          const canSelect = !isSelected && atributosEscolhidos.length < quantidadeNecessaria;
+          const isSelected = atributosInternos.includes(atributo.key);
+          const canSelect = !isSelected && atributosInternos.length < quantidadeNecessaria;
 
           return (
             <button
@@ -97,7 +105,7 @@ const SeletorAtributosLivres: React.FC<SeletorAtributosLivresProps> = ({
       </div>
 
       <div className="mt-3 text-xs text-green-600">
-        Selecionados: {atributosEscolhidos.length}/{quantidadeNecessaria}
+        Selecionados: {atributosInternos.length}/{quantidadeNecessaria}
       </div>
 
       {/* Mostrar penalidade se existir */}

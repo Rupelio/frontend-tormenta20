@@ -2,27 +2,68 @@ import React, { useState, useEffect } from 'react';
 import { Personagem, Stats } from '@/types';
 
 // components/StatsCalculator.tsx
-export const StatsCalculator: React.FC<{personagem: Partial<Personagem>}> = ({ personagem }) => {
+export const StatsCalculator: React.FC<{
+  personagem: Partial<Personagem>;
+  racaSelecionada?: any;
+  atributosLivresEscolhidos?: string[];
+}> = ({ personagem, racaSelecionada, atributosLivresEscolhidos }) => {
   const [statsCalculados, setStatsCalculados] = useState<Stats>({
     pv_total: 0,
     pm_total: 0,
     defesa: 10
   });
 
+  // Função para calcular bônus racial de um atributo
+  const getBonusRacial = (atributo: string): number => {
+    if (!racaSelecionada) return 0;
+
+    let bonus = 0;
+
+    // Verificar se tem atributos livres
+    const temAtributosLivres = racaSelecionada.atributo_bonus_1?.toLowerCase() === 'livre' ||
+                               racaSelecionada.atributo_bonus_2?.toLowerCase() === 'livre';
+
+    if (temAtributosLivres && atributosLivresEscolhidos?.includes(atributo.toUpperCase())) {
+      bonus += 1;
+    } else {
+      // Verificar bônus fixos
+      if (racaSelecionada.atributo_bonus_1?.toLowerCase() === atributo.toLowerCase()) {
+        bonus += racaSelecionada.valor_bonus_1 || 0;
+      }
+      if (racaSelecionada.atributo_bonus_2?.toLowerCase() === atributo.toLowerCase()) {
+        bonus += racaSelecionada.valor_bonus_2 || 0;
+      }
+    }
+
+    // Verificar penalidades (ex: Lefou tem -1 CAR)
+    if (racaSelecionada.nome?.toLowerCase() === 'lefou' && atributo.toLowerCase() === 'car') {
+      bonus -= 1;
+    }
+
+    return bonus;
+  };
+
   const calculateStats = (char: Partial<Personagem>): Stats => {
-    // No Tormenta20, modificador é igual ao valor do atributo
-    const modCon = char.con || 0; // Modificador de Constituição
-    const modDes = char.des || 0; // Modificador de Destreza
+    // Calcular valores finais dos atributos (base + bônus racial)
+    const conBase = char.con || 0;
+    const desBase = char.des || 0;
 
-    // PV base + modificador de CON por nível
-    const pvBase = char.pontos_vida || 0;
-    const pvTotal = pvBase + (modCon * (char.nivel || 1));
+    const bonusRacialCon = getBonusRacial('con');
+    const bonusRacialDes = getBonusRacial('des');
 
-    // PM base (sem modificadores por enquanto)
-    const pmTotal = char.pontos_mana || 0;
+    const modConFinal = conBase + bonusRacialCon; // Modificador final de CON
+    const modDesFinal = desBase + bonusRacialDes; // Modificador final de DES
 
-    // Defesa = 10 + mod DES
-    const defesa = 10 + modDes;
+    // PV = (pv_por_nivel da classe + mod CON final) * nível
+    const pvPorNivel = char.classe?.pvpornivel || 0;
+    const pvTotal = (pvPorNivel + modConFinal) * (char.nivel || 1);
+
+    // PM = pm_por_nivel da classe * nível
+    const pmPorNivel = char.classe?.pmpornivel || 0;
+    const pmTotal = pmPorNivel * (char.nivel || 1);
+
+    // Defesa = 10 + mod DES final
+    const defesa = 10 + modDesFinal;
 
     return {
       pv_total: Math.max(1, pvTotal), // Mínimo 1 PV
@@ -36,7 +77,7 @@ export const StatsCalculator: React.FC<{personagem: Partial<Personagem>}> = ({ p
       const stats = calculateStats(personagem);
       setStatsCalculados(stats);
     }
-  }, [personagem]);
+  }, [personagem, racaSelecionada, atributosLivresEscolhidos]);
 
   return (
     <div className="bg-gray-50 rounded-lg shadow-lg p-6 text-black">

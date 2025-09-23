@@ -68,28 +68,49 @@ export interface Origem {
 }
 
 export interface Personagem {
-  id?: number;
+  id: number;
   nome: string;
   nivel: number;
+
+  // Atributos base (0 a 4)
   for: number;
   des: number;
   con: number;
   int: number;
   sab: number;
   car: number;
-  raca_id: number | null;
-  classe_id: number | null;
-  origem_id: number | null;
-  divindade_id?: number | null;
+
+  // Relações
+  raca_id: number;
   raca?: Raca;
+  classe_id: number;
   classe?: Classe;
+  origem_id: number;
   origem?: Origem;
+  divindade_id?: number;
   divindade?: Divindade;
-  pontos_vida?: number;
-  pontos_mana?: number;
-  defesa?: number;
-  escolhas_raca?: string;
+
+  // Perícias do personagem
   pericias?: Pericia[];
+
+  // Escolhas específicas de raça
+  escolhas_raca?: string;
+
+  // Atributos livres escolhidos (JSON) - para raças com atributos livres
+  atributos_livres?: string;
+
+  // Identificação do usuário/sessão
+  user_session_id?: string;
+  user_ip?: string;
+  created_by_type?: 'session' | 'ip' | 'hybrid';
+
+  // Stats calculados
+  pv_total?: number;
+  pm_total?: number;
+  defesa?: number;
+
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface Stats {

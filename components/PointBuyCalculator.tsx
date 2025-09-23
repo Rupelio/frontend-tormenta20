@@ -26,10 +26,9 @@ interface PointBuyCalculatorProps {
   onAtributosLivresChange?: (atributos: string[]) => void;
 }
 
-// Tabela de custos para point-buy
 const getCostForValue = (value: number): number => {
   switch (value) {
-    case -1: return -1; // Ganho de 1 ponto
+    case -1: return -1;
     case 0: return 0;
     case 1: return 1;
     case 2: return 2;
@@ -39,20 +38,9 @@ const getCostForValue = (value: number): number => {
   }
 };
 
-// Mapear nomes de atributos para as chaves usadas no sistema
 const atributoMap: Record<string, 'for' | 'des' | 'con' | 'int' | 'sab' | 'car'> = {
-  'FOR': 'for',
-  'DES': 'des',
-  'CON': 'con',
-  'INT': 'int',
-  'SAB': 'sab',
-  'CAR': 'car',
-  'forca': 'for',
-  'destreza': 'des',
-  'constituicao': 'con',
-  'inteligencia': 'int',
-  'sabedoria': 'sab',
-  'carisma': 'car'
+  'FOR': 'for', 'DES': 'des', 'CON': 'con', 'INT': 'int', 'SAB': 'sab', 'CAR': 'car',
+  'forca': 'for', 'destreza': 'des', 'constituicao': 'con', 'inteligencia': 'int', 'sabedoria': 'sab', 'carisma': 'car'
 };
 
 const PointBuyCalculator: React.FC<PointBuyCalculatorProps> = ({
@@ -62,149 +50,69 @@ const PointBuyCalculator: React.FC<PointBuyCalculatorProps> = ({
   atributosLivresEscolhidos = [],
   onAtributosLivresChange
 }) => {
-  // Verificar se a raça tem atributos livres
   const temAtributosLivres = racaSelecionada && (
     racaSelecionada.atributo_bonus_1?.toLowerCase() === 'livre' ||
     racaSelecionada.atributo_bonus_2?.toLowerCase() === 'livre' ||
     racaSelecionada.atributo_bonus_3?.toLowerCase() === 'livre'
   );
 
-  // Calcular bônus raciais considerando atributos livres
   const getBonusRacial = (atributo: keyof typeof atributos): number => {
     if (!racaSelecionada) return 0;
-
     let bonus = 0;
-
-    // Se tem atributos livres, usar a seleção do jogador
     if (temAtributosLivres) {
-      const atributoKey = atributo.toUpperCase();
-
-      if (atributosLivresEscolhidos.includes(atributoKey)) {
-        bonus += 1; // Cada atributo livre escolhido recebe +1
+      if (atributosLivresEscolhidos.includes(atributo.toUpperCase())) {
+        bonus += 1;
       }
-
-      // Para raças mistas (que têm alguns fixos e alguns livres)
-      // verificar também os bônus fixos usando os novos campos
-      if (racaSelecionada.atributo_bonus_1 && racaSelecionada.atributo_bonus_1.toLowerCase() !== 'livre') {
-        const atributo1 = atributoMap[racaSelecionada.atributo_bonus_1.toUpperCase()];
-        if (atributo1 === atributo) {
-          bonus += racaSelecionada.valor_bonus_1 || 0;
-        }
-      }
-
-      if (racaSelecionada.atributo_bonus_2 && racaSelecionada.atributo_bonus_2.toLowerCase() !== 'livre') {
-        const atributo2 = atributoMap[racaSelecionada.atributo_bonus_2.toUpperCase()];
-        if (atributo2 === atributo) {
-          bonus += racaSelecionada.valor_bonus_2 || 0;
-        }
-      }
-
-      if (racaSelecionada.atributo_bonus_3 && racaSelecionada.atributo_bonus_3.toLowerCase() !== 'livre') {
-        const atributo3 = atributoMap[racaSelecionada.atributo_bonus_3.toUpperCase()];
-        if (atributo3 === atributo) {
-          bonus += racaSelecionada.valor_bonus_3 || 0;
-        }
-      }
-
-
     } else {
-      // Sistema normal para raças com bônus fixos - usar os novos campos
-      if (racaSelecionada.atributo_bonus_1) {
-        const atributo1 = atributoMap[racaSelecionada.atributo_bonus_1.toUpperCase()];
-        if (atributo1 === atributo) {
-          bonus += racaSelecionada.valor_bonus_1 || 0;
-        }
-      }
-
-      if (racaSelecionada.atributo_bonus_2) {
-        const atributo2 = atributoMap[racaSelecionada.atributo_bonus_2.toUpperCase()];
-        if (atributo2 === atributo) {
-          bonus += racaSelecionada.valor_bonus_2 || 0;
-        }
-      }
-
-      if (racaSelecionada.atributo_bonus_3) {
-        const atributo3 = atributoMap[racaSelecionada.atributo_bonus_3.toUpperCase()];
-        if (atributo3 === atributo) {
-          bonus += racaSelecionada.valor_bonus_3 || 0;
-        }
-      }
-
+      if (racaSelecionada.atributo_bonus_1 && atributoMap[racaSelecionada.atributo_bonus_1.toUpperCase()] === atributo) bonus += racaSelecionada.valor_bonus_1 || 0;
+      if (racaSelecionada.atributo_bonus_2 && atributoMap[racaSelecionada.atributo_bonus_2.toUpperCase()] === atributo) bonus += racaSelecionada.valor_bonus_2 || 0;
+      if (racaSelecionada.atributo_bonus_3 && atributoMap[racaSelecionada.atributo_bonus_3.toUpperCase()] === atributo) bonus += racaSelecionada.valor_bonus_3 || 0;
     }
-
     return bonus;
   };
 
-  // Calcular penalidades raciais usando os dados do banco
   const getPenalidadeRacial = (atributo: keyof typeof atributos): number => {
-    if (!racaSelecionada) return 0;
-
-    // Primeiro verificar se há penalidade nos novos campos do banco
-    if (racaSelecionada.atributo_penalidade && racaSelecionada.valor_penalidade) {
-      const atributoPenalidade = atributoMap[racaSelecionada.atributo_penalidade.toUpperCase()];
-      if (atributoPenalidade === atributo) {
-        return racaSelecionada.valor_penalidade;
-      }
+    if (!racaSelecionada?.atributo_penalidade || !racaSelecionada.valor_penalidade) return 0;
+    if (atributoMap[racaSelecionada.atributo_penalidade.toUpperCase()] === atributo) {
+      return racaSelecionada.valor_penalidade;
     }
-
     return 0;
   };
 
-  // Calcular valor final do atributo (base + bônus racial + penalidade)
   const getValorFinal = (atributo: keyof typeof atributos): number => {
-    const valorBase = atributos[atributo];
-    const bonus = getBonusRacial(atributo);
-    const penalidade = getPenalidadeRacial(atributo);
-
-    return valorBase + bonus + penalidade;
+    return atributos[atributo] + getBonusRacial(atributo) + getPenalidadeRacial(atributo);
   };
 
-  const totalCost = Object.values(atributos).reduce(
-    (sum, value) => sum + getCostForValue(value),
-    0
-  );
-
+  const totalCost = Object.values(atributos).reduce((sum, value) => sum + getCostForValue(value), 0);
   const remainingPoints = 10 - totalCost;
 
   const updateAttribute = (attr: keyof typeof atributos, change: number) => {
     const newValue = atributos[attr] + change;
-
-    // Verificar se o valor está no range válido
     if (newValue < -1 || newValue > 4) return;
 
-    // Verificar se temos pontos suficientes para aumentar
     if (change > 0) {
-      const currentCost = getCostForValue(atributos[attr]);
-      const newCost = getCostForValue(newValue);
-      const costDifference = newCost - currentCost;
-
-      if (remainingPoints - costDifference < 0) {
-        return; // Não há pontos suficientes
-      }
+      const costDifference = getCostForValue(newValue) - getCostForValue(atributos[attr]);
+      if (remainingPoints - costDifference < 0) return;
     }
 
-    onChange({
+    const novosAtributos = {
       ...atributos,
       [attr]: newValue,
-    });
+    };
+
+    // MUDANÇA CRÍTICA: Enviar apenas os atributos base, não os finais.
+    onChange(novosAtributos);
   };
 
   const getModifier = (value: number): string => {
-    // No Tormenta20, o modificador é igual ao valor do atributo
     if (value < 0) return String(value);
     if (value === 0) return "0";
     return `+${value}`;
   };
 
-  const AttributeRow = ({
-    name,
-    attr,
-    label
-  }: {
-    name: keyof typeof atributos;
-    attr: string;
-    label: string;
-  }) => {
+  // MUDANÇA CRÍTICA: O useEffect que chamava onChange foi REMOVIDO.
+
+  const AttributeRow = ({ name, label }: { name: keyof typeof atributos; label: string; }) => {
     const valorBase = atributos[name];
     const bonus = getBonusRacial(name);
     const penalidade = getPenalidadeRacial(name);
@@ -214,25 +122,14 @@ const PointBuyCalculator: React.FC<PointBuyCalculatorProps> = ({
     return (
       <div className="flex items-center justify-between p-3 border rounded-lg gap-3">
         <div className="flex flex-col min-w-0" style={{ width: 'clamp(120px, 25vw, 180px)' }}>
-          <span
-            className="font-medium text-gray-900 leading-none overflow-hidden whitespace-nowrap text-ellipsis"
-            style={{ fontSize: 'clamp(0.7rem, 2.2vw, 0.95rem)' }}
-            title={label}
-          >
+          <span className="font-medium text-gray-900 leading-none overflow-hidden whitespace-nowrap text-ellipsis" style={{ fontSize: 'clamp(0.7rem, 2.2vw, 0.95rem)' }} title={label}>
             {label}
           </span>
-          <span
-            className="text-gray-600 leading-none overflow-hidden whitespace-nowrap text-ellipsis mt-1"
-            style={{ fontSize: 'clamp(0.6rem, 1.8vw, 0.8rem)' }}
-          >
+          <span className="text-gray-600 leading-none overflow-hidden whitespace-nowrap text-ellipsis mt-1" style={{ fontSize: 'clamp(0.6rem, 1.8vw, 0.8rem)' }}>
             Modificador: {modificadorFinal}
           </span>
           {racaSelecionada && (bonus !== 0 || penalidade !== 0) && (
-            <span
-              className="text-blue-600 leading-none overflow-hidden whitespace-nowrap text-ellipsis mt-0.5"
-              style={{ fontSize: 'clamp(0.55rem, 1.6vw, 0.7rem)' }}
-              title={`Base: ${valorBase}${bonus > 0 ? ` +${bonus} racial` : ''}${penalidade < 0 ? ` ${penalidade} racial` : ''} = ${valorFinal} final`}
-            >
+            <span className="text-blue-600 leading-none overflow-hidden whitespace-nowrap text-ellipsis mt-0.5" style={{ fontSize: 'clamp(0.55rem, 1.6vw, 0.7rem)' }} title={`Base: ${valorBase}${bonus > 0 ? ` +${bonus} racial` : ''}${penalidade < 0 ? ` ${penalidade} racial` : ''} = ${valorFinal} final`}>
               Base: {valorBase}
               {bonus > 0 && ` +${bonus} racial`}
               {penalidade < 0 && ` ${penalidade} racial`}
@@ -241,39 +138,17 @@ const PointBuyCalculator: React.FC<PointBuyCalculatorProps> = ({
           )}
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
-          <button
-            type="button"
-            onClick={() => updateAttribute(name, -1)}
-            disabled={atributos[name] <= -1}
-            className="w-8 h-8 flex items-center justify-center bg-red-500 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-red-600 flex-shrink-0"
-            style={{ fontSize: 'clamp(0.75rem, 2vw, 0.875rem)' }}
-          >
+          <button type="button" onClick={() => updateAttribute(name, -1)} disabled={valorBase <= -1} className="w-8 h-8 flex items-center justify-center bg-red-500 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-red-600 flex-shrink-0" style={{ fontSize: 'clamp(0.75rem, 2vw, 0.875rem)' }}>
             -
           </button>
-          <span
-            className="w-8 text-center font-bold flex-shrink-0"
-            style={{ fontSize: 'clamp(0.875rem, 2.5vw, 1rem)' }}
-          >
-            {atributos[name]}
+          <span className="w-8 text-center font-bold flex-shrink-0" style={{ fontSize: 'clamp(0.875rem, 2.5vw, 1rem)' }}>
+            {valorBase}
           </span>
-          <button
-            type="button"
-            onClick={() => updateAttribute(name, 1)}
-            disabled={
-              atributos[name] >= 4 ||
-              (remainingPoints -
-                (getCostForValue(atributos[name] + 1) - getCostForValue(atributos[name])) < 0)
-            }
-            className="w-8 h-8 flex items-center justify-center bg-green-500 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-green-600 flex-shrink-0"
-            style={{ fontSize: 'clamp(0.75rem, 2vw, 0.875rem)' }}
-          >
+          <button type="button" onClick={() => updateAttribute(name, 1)} disabled={valorBase >= 4 || (remainingPoints - (getCostForValue(valorBase + 1) - getCostForValue(valorBase)) < 0)} className="w-8 h-8 flex items-center justify-center bg-green-500 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-green-600 flex-shrink-0" style={{ fontSize: 'clamp(0.75rem, 2vw, 0.875rem)' }}>
             +
           </button>
-          <span
-            className="text-gray-600 whitespace-nowrap flex-shrink-0 ml-1"
-            style={{ fontSize: 'clamp(0.625rem, 1.8vw, 0.8rem)' }}
-          >
-            Custo: {getCostForValue(atributos[name])}
+          <span className="text-gray-600 whitespace-nowrap flex-shrink-0 ml-1" style={{ fontSize: 'clamp(0.625rem, 1.8vw, 0.8rem)' }}>
+            Custo: {getCostForValue(valorBase)}
           </span>
         </div>
       </div>
@@ -352,12 +227,12 @@ const PointBuyCalculator: React.FC<PointBuyCalculatorProps> = ({
       )}
 
       <div className="space-y-3">
-        <AttributeRow name="for" attr="for" label="Força (FOR)" />
-        <AttributeRow name="des" attr="des" label="Destreza (DES)" />
-        <AttributeRow name="con" attr="con" label="Constituição (CON)" />
-        <AttributeRow name="int" attr="int" label="Inteligência (INT)" />
-        <AttributeRow name="sab" attr="sab" label="Sabedoria (SAB)" />
-        <AttributeRow name="car" attr="car" label="Carisma (CAR)" />
+        <AttributeRow name="for" label="Força (FOR)" />
+        <AttributeRow name="des" label="Destreza (DES)" />
+        <AttributeRow name="con" label="Constituição (CON)" />
+        <AttributeRow name="int" label="Inteligência (INT)" />
+        <AttributeRow name="sab" label="Sabedoria (SAB)" />
+        <AttributeRow name="car" label="Carisma (CAR)" />
       </div>
     </div>
   );

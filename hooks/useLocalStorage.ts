@@ -89,7 +89,6 @@ export function usePersonagemCache() {
       if (typeof window !== "undefined") {
         try {
           window.localStorage.setItem('tormenta20_personagem_draft', JSON.stringify(dataToSave));
-          console.log('💾 Cache do personagem salvo automaticamente');
         } catch (error) {
           console.error('Erro ao salvar cache:', error);
         }
@@ -102,7 +101,6 @@ export function usePersonagemCache() {
       clearTimeout(saveTimeoutRef.current);
     }
     removeCachedPersonagem();
-    console.log('🗑️ Cache do personagem removido');
   }, [removeCachedPersonagem]);
 
   // Verificar se há cache válido
