@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { api } from '@/lib/api';
 import { Personagem, Stats } from '@/types';
+import { TrashIcon } from '@heroicons/react/24/outline';
 
 // Função para calcular stats (mesma lógica do StatsCalculator)
 const calculateStats = (char: Partial<Personagem>): Stats => {
@@ -79,6 +80,30 @@ export default function Home() {
     carregarPersonagens();
   }, []);
 
+  const handleDelete = async (id: number) => {
+    // 1. Pedir confirmação ao usuário
+    const confirmou = window.confirm(
+      'Você tem certeza que deseja excluir este personagem? Esta ação não pode ser desfeita.'
+    );
+
+    if (!confirmou) {
+      return; // Se o usuário cancelar, a função para aqui
+    }
+
+    try {
+      await api.deletePersonagem(id);
+
+      setPersonagens((personagensAtuais) =>
+        personagensAtuais.filter((personagem) => personagem.id !== id)
+      );
+
+    } catch (err) {
+      console.error('Erro ao excluir personagem:', err);
+      alert('Não foi possível excluir o personagem. Tente novamente.');
+    }
+  };
+
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
@@ -139,32 +164,46 @@ export default function Home() {
               const stats = calculateStats(personagem);
 
               return (
-                <div key={personagem.id} className="bg-white rounded-lg shadow-lg p-6">
-                  <div className="flex justify-between items-start mb-4">
-                    <h3 className="text-xl font-bold text-gray-900">
-                      {personagem.nome}
-                    </h3>
-                    <span className="bg-blue-100 text-blue-800 text-sm px-2 py-1 rounded">
-                      Nível {personagem.nivel}
-                    </span>
-                  </div>
+                <div key={personagem.id} className="bg-white rounded-lg shadow-lg p-6 flex flex-col">
+                    <div className="group flex justify-between items-start mb-4 p-2 rounded-lg hover:bg-gray-50"> {/* Adicionado group, padding e hover opcional */}
+                        {/* Nome (sem alteração) */}
+                        <h3 className="text-xl font-bold text-gray-900 truncate max-w-[calc(100%-80px)] md:max-w-[calc(100%-120px)] items-center">
+                            {personagem.nome}
+                        </h3>
 
-                  <div className="space-y-2 text-sm text-gray-600 mb-4">
-                    <div>
-                      <strong>Raça:</strong> {personagem.raca?.nome || 'N/A'}
+                        {/* Agrupador */}
+                        <div className="flex items-center gap-2">
+                            <span className="bg-blue-100 text-blue-800 text-sm px-2 py-1 rounded">
+                                Nível {personagem.nivel}
+                            </span>
+
+                            {/* Opção 3: Botão que aparece no Hover */}
+                            <button
+                                onClick={() => handleDelete(personagem.id)}
+                                className="p-2 rounded-full text-gray-400 hover:bg-red-100 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-all"
+                                aria-label={`Excluir ${personagem.nome}`}
+                            >
+                                <TrashIcon className="h-5 w-5" />
+                            </button>
+                        </div>
                     </div>
-                    <div>
-                      <strong>Classe:</strong> {personagem.classe?.nome || 'N/A'}
+
+                    <div className="space-y-2 text-sm text-gray-600 mb-4 flex-grow">
+                        <div>
+                            <strong>Raça:</strong> {personagem.raca?.nome || 'N/A'}
+                        </div>
+                        <div>
+                            <strong>Classe:</strong> {personagem.classe?.nome || 'N/A'}
+                        </div>
+                        <div>
+                            <strong>Origem:</strong> {personagem.origem?.nome || 'N/A'}
+                        </div>
+                        {personagem.divindade && (
+                        <div>
+                            <strong>Divindade:</strong> {personagem.divindade.nome}
+                        </div>
+                        )}
                     </div>
-                    <div>
-                      <strong>Origem:</strong> {personagem.origem?.nome || 'N/A'}
-                    </div>
-                    {personagem.divindade && (
-                      <div>
-                        <strong>Divindade:</strong> {personagem.divindade.nome}
-                      </div>
-                    )}
-                  </div>
 
                   <div className="grid grid-cols-2 gap-4 text-sm mb-4">
                     <div className="bg-red-50 p-2 rounded">
@@ -184,12 +223,12 @@ export default function Home() {
                     >
                       ✏️ Editar
                     </Link>
-                    <Link
+                    {/* <Link
                       href={`/exportar-pdf?id=${personagem.id}`}
                       className="flex-1 px-3 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors text-sm text-center"
                     >
                       📄 PDF
-                    </Link>
+                    </Link> */}
                   </div>
                 </div>
               );

@@ -1421,12 +1421,12 @@ function PersonagemFormComponent({ editId }: PersonagemFormProps) {
 
           {/* Botões de Ação Adicionais */}
           <div className="mt-4 flex gap-3">
-            <Link
+            {/* <Link
               href="/exportar-pdf"
               className="flex-1 py-3 px-4 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium text-center transition-colors"
             >
               📄 Exportar PDF
-            </Link>
+            </Link> */}
             <Link
               href="/"
               className="flex-1 py-3 px-4 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-medium text-center transition-colors"

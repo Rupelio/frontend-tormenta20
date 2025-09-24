@@ -21,6 +21,10 @@ class ApiService {
         throw new Error(`API Error: ${response.status} ${response.statusText}`);
       }
 
+      if (response.status === 204) {
+				return undefined as T;
+			}
+
       return response.json();
     } catch (error) {
       if (error instanceof TypeError && error.message.includes('fetch')) {
