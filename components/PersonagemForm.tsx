@@ -451,7 +451,12 @@ function PersonagemFormComponent({ editId }: PersonagemFormProps) {
       }
 
       if (personagemData.pericias) {
-        setPericiasEscolhidas(personagemData.pericias.map(p => getId(p)));
+        console.log('🔍 DEBUG - Perícias carregadas do backend:', personagemData.pericias);
+        const periciasIds = personagemData.pericias.map(p => getId(p));
+        console.log('🔍 DEBUG - IDs das perícias extraídos:', periciasIds);
+        setPericiasEscolhidas(periciasIds);
+      } else {
+        console.log('⚠️ DEBUG - Nenhuma perícia encontrada no personagem carregado');
       }
 
       // Carregar poderes
@@ -526,12 +531,12 @@ function PersonagemFormComponent({ editId }: PersonagemFormProps) {
             classe_id: personagemData.classe_id,
             origem_id: personagemData.origem_id,
             divindade_id: personagemData.divindade_id,
-            escolhas_raca: personagemData.escolhas_raca,
+            escolhas_raca: Object.keys(escolhasRaca).length > 0 ? JSON.stringify(escolhasRaca) : "{}",
             // Dados complementares
-            atributosLivres: personagemData.atributosLivres || [],
-            pericias_selecionadas: personagemData.pericias_selecionadas || [],
-            poderes_classe: personagemData.poderes_classe || [],
-            poderes_divinos: personagemData.poderes_divinos || []
+            atributosLivres: temAtributosLivres ? atributosLivresEscolhidos : [],
+            pericias_selecionadas: periciasEscolhidas,
+            poderes_classe: poderesClasseSelecionados,
+            poderes_divinos: poderesDivinosSelecionados
           };
 
           // Atualizar personagem existente
@@ -588,19 +593,8 @@ function PersonagemFormComponent({ editId }: PersonagemFormProps) {
         // Salvar dados relacionados em paralelo
         const savePromises = [];
 
-        // Salvar perícias do personagem
-        if (periciasEscolhidas.length > 0) {
-          savePromises.push(
-            api.savePersonagemPericias(resultPersonagem.id!, periciasEscolhidas)
-              .then(() => console.log('✅ Perícias salvas com sucesso'))
-              .catch(error => {
-                console.error('❌ Erro ao salvar perícias:', error);
-                console.error('❌ Dados enviados:', { pericias_ids: periciasEscolhidas });
-              })
-          );
-        } else {
-          console.log('⚠️ Nenhuma perícia selecionada para salvar');
-        }
+        // ✅ Perícias já são salvas durante a criação do personagem via campo pericias_selecionadas
+        console.log('✅ Perícias incluídas na criação do personagem:', periciasEscolhidas);
 
         // Salvar poderes de classe se houver
         if (poderesClasseSelecionados.length > 0) {
@@ -1269,6 +1263,7 @@ function PersonagemFormComponent({ editId }: PersonagemFormProps) {
               periciasEscolhidas={periciasEscolhidas}
               onPericiasChange={setPericiasEscolhidas}
               periciasDeRaca={periciasDeRacaEscolhidas}
+              isEditing={isEditing}
             />
           </div>
         </div>

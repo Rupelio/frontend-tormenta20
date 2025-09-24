@@ -18,6 +18,7 @@ interface SeletorPericiasProps {
   periciasEscolhidas: number[];
   onPericiasChange: (pericias: number[]) => void;
   periciasDeRaca?: number[]; // IDs das perícias vindas das escolhas de raça
+  isEditing?: boolean; // Indica se estamos no modo editar
 }
 
 export default function SeletorPericias({
@@ -27,20 +28,49 @@ export default function SeletorPericias({
   periciasEscolhidas,
   onPericiasChange,
   periciasDeRaca = [],
+  isEditing = false,
 }: SeletorPericiasProps) {
+  // Estados - devem vir antes dos useEffects
   const [periciasDisponiveis, setPericiasDisponiveis] = useState<Pericia[]>([]);
   const [periciasAutomaticas, setPericiasAutomaticas] = useState<Pericia[]>([]);
   const [quantidadePericias, setQuantidadePericias] = useState(2);
   const [loading, setLoading] = useState(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(isEditing); // Só é true se estivermos editando
+
+  // Debug log quando perícias mudam
+  useEffect(() => {
+    console.log('🔍 DEBUG SeletorPericias - periciasEscolhidas:', periciasEscolhidas);
+    console.log('🔍 DEBUG SeletorPericias - isEditing:', isEditing);
+  }, [periciasEscolhidas, isEditing]);
+
+  // Marcar fim do carregamento inicial apenas no modo editar, após perícias serem carregadas
+  useEffect(() => {
+    if (isEditing && isInitialLoad && periciasEscolhidas.length > 0 && periciasDisponiveis.length > 0) {
+      console.log('🔚 DEBUG - Finalizando carregamento inicial após perícias carregadas');
+      // Delay pequeno para garantir que tudo foi processado
+      setTimeout(() => {
+        setIsInitialLoad(false);
+      }, 100);
+    }
+  }, [isEditing, isInitialLoad, periciasEscolhidas.length, periciasDisponiveis.length]);
 
   // Converter IDs das perícias de raça em objetos
   const periciasDeRacaObjetos = periciasDeRaca
     .map(id => periciasDisponiveis.find(p => p.id === id))
     .filter(Boolean) as Pericia[];
 
-  // Reset apenas perícias de classe quando classe mudar
+  // Reset apenas perícias de classe quando classe mudar (mas não no modo editar durante carregamento inicial)
   useEffect(() => {
+    console.log('🔍 DEBUG Reset useEffect - isEditing:', isEditing, 'isInitialLoad:', isInitialLoad, 'classeId:', classeId);
+
+    // Se estamos editando e ainda é o carregamento inicial, não resetar
+    if (isEditing && isInitialLoad) {
+      console.log('✅ DEBUG - Pulando reset porque estamos editando e é carregamento inicial');
+      return;
+    }
+
     if (classeId) {
+      console.log('🔍 DEBUG - Resetando perícias. Perícias atuais:', periciasEscolhidas);
       // Manter apenas perícias que não são de classe (perícias de raça, origem e automáticas)
       const periciasNaoDeClasse = periciasEscolhidas.filter(id => {
         // Manter se for perícia de raça escolhida (versatilidade)
@@ -50,8 +80,10 @@ export default function SeletorPericias({
 
         return ehPericiaDaRaca || ehAutomatica;
       });
+      console.log('🔍 DEBUG - Perícias após filtro:', periciasNaoDeClasse);
       onPericiasChange(periciasNaoDeClasse);
     } else {
+      console.log('🔍 DEBUG - Limpando todas as perícias (sem classe)');
       onPericiasChange([]);
     }
   }, [classeId, periciasDeRacaObjetos.length, periciasAutomaticas.length]);
@@ -139,6 +171,7 @@ export default function SeletorPericias({
         setQuantidadePericias(2);
       } finally {
         setLoading(false);
+        // isInitialLoad é controlado por useEffect específico no modo editar
       }
     };
 

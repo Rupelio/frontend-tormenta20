@@ -96,15 +96,11 @@ class ApiService {
   }
 
   // Salvar perícias do personagem
-  async savePersonagemPericias(personagemId: number, periciasIds: number[]): Promise<any> {
-    return this.request<any>(`/api/v1/personagens/${personagemId}/pericias`, {
-      method: 'POST',
-      body: JSON.stringify({ pericias_ids: periciasIds }),
-    });
-  }
+  // ✅ Perícias são salvas automaticamente através dos campos pericias_selecionadas nos métodos Create/Update do personagem
 
-  // Buscar perícias selecionadas do personagem
+  // Buscar perícias selecionadas do personagem (caso necessário no futuro)
   async getPersonagemPericias(personagemId: number): Promise<{personagem_id: number, pericias_ids: number[]}> {
+    // Nota: Este endpoint não existe ainda, perícias são carregadas junto com o personagem
     return this.request<{personagem_id: number, pericias_ids: number[]}>(`/api/v1/personagens/${personagemId}/pericias`);
   }
 
