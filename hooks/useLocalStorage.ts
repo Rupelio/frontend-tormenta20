@@ -58,6 +58,7 @@ interface PersonagemCacheData {
   periciasEscolhidas: number[];
   poderesClasseSelecionados: number[];
   poderesDivinosSelecionados: number[];
+  beneficiosOrigem: { pericias: number[], poderes: number[] };
   timestamp: number;
   version: string;
 }

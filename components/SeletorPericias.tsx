@@ -14,81 +14,52 @@ interface Pericia {
 interface SeletorPericiasProps {
   classeId: number | null;
   racaId: number | null;
-  origemId: number | null;
   periciasEscolhidas: number[];
   onPericiasChange: (pericias: number[]) => void;
-  periciasDeRaca?: number[]; // IDs das perícias vindas das escolhas de raça
-  isEditing?: boolean; // Indica se estamos no modo editar
+  periciasDeRacaObjetos?: Pericia[];
+  periciasDeOrigemObjetos?: Pericia[];
+  isEditing?: boolean;
 }
 
 export default function SeletorPericias({
   classeId,
   racaId,
-  origemId,
   periciasEscolhidas,
   onPericiasChange,
-  periciasDeRaca = [],
+  periciasDeRacaObjetos = [],
+  periciasDeOrigemObjetos = [],
   isEditing = false,
 }: SeletorPericiasProps) {
-  // Estados - devem vir antes dos useEffects
   const [periciasDisponiveis, setPericiasDisponiveis] = useState<Pericia[]>([]);
   const [periciasAutomaticas, setPericiasAutomaticas] = useState<Pericia[]>([]);
   const [quantidadePericias, setQuantidadePericias] = useState(2);
   const [loading, setLoading] = useState(false);
-  const [isInitialLoad, setIsInitialLoad] = useState(isEditing); // Só é true se estivermos editando
+  const [isInitialLoad, setIsInitialLoad] = useState(isEditing);
 
-  // Debug log quando perícias mudam
-  useEffect(() => {
-    console.log('🔍 DEBUG SeletorPericias - periciasEscolhidas:', periciasEscolhidas);
-    console.log('🔍 DEBUG SeletorPericias - isEditing:', isEditing);
-  }, [periciasEscolhidas, isEditing]);
-
-  // Marcar fim do carregamento inicial apenas no modo editar, após perícias serem carregadas
   useEffect(() => {
     if (isEditing && isInitialLoad && periciasEscolhidas.length > 0 && periciasDisponiveis.length > 0) {
-      console.log('🔚 DEBUG - Finalizando carregamento inicial após perícias carregadas');
-      // Delay pequeno para garantir que tudo foi processado
-      setTimeout(() => {
-        setIsInitialLoad(false);
-      }, 100);
+      setTimeout(() => { setIsInitialLoad(false); }, 100);
     }
   }, [isEditing, isInitialLoad, periciasEscolhidas.length, periciasDisponiveis.length]);
 
-  // Converter IDs das perícias de raça em objetos
-  const periciasDeRacaObjetos = periciasDeRaca
-    .map(id => periciasDisponiveis.find(p => p.id === id))
-    .filter(Boolean) as Pericia[];
-
-  // Reset apenas perícias de classe quando classe mudar (mas não no modo editar durante carregamento inicial)
   useEffect(() => {
-    console.log('🔍 DEBUG Reset useEffect - isEditing:', isEditing, 'isInitialLoad:', isInitialLoad, 'classeId:', classeId);
-
-    // Se estamos editando e ainda é o carregamento inicial, não resetar
     if (isEditing && isInitialLoad) {
-      console.log('✅ DEBUG - Pulando reset porque estamos editando e é carregamento inicial');
       return;
     }
 
     if (classeId) {
-      console.log('🔍 DEBUG - Resetando perícias. Perícias atuais:', periciasEscolhidas);
-      // Manter apenas perícias que não são de classe (perícias de raça, origem e automáticas)
       const periciasNaoDeClasse = periciasEscolhidas.filter(id => {
-        // Manter se for perícia de raça escolhida (versatilidade)
-        const ehPericiaDaRaca = periciasDeRacaObjetos.some(racaPericia => racaPericia.id === id);
-        // Manter se for perícia automática
-        const ehAutomatica = periciasAutomaticas.some(auto => auto.id === id);
-
-        return ehPericiaDaRaca || ehAutomatica;
+        const ehPericiaDaRaca = periciasDeRacaObjetos.some(p => p.id === id);
+        const ehPericiaDaOrigem = periciasDeOrigemObjetos.some(p => p.id === id);
+        const ehAutomatica = periciasAutomaticas.some(p => p.id === id);
+        return ehPericiaDaRaca || ehAutomatica || ehPericiaDaOrigem;
       });
-      console.log('🔍 DEBUG - Perícias após filtro:', periciasNaoDeClasse);
       onPericiasChange(periciasNaoDeClasse);
     } else {
-      console.log('🔍 DEBUG - Limpando todas as perícias (sem classe)');
       onPericiasChange([]);
     }
-  }, [classeId, periciasDeRacaObjetos.length, periciasAutomaticas.length]);
+  }, [classeId, periciasDeRacaObjetos, periciasDeOrigemObjetos, periciasAutomaticas]);
 
-  // Buscar todas as perícias quando qualquer ID mudar
   useEffect(() => {
     const fetchTodasPericias = async () => {
       if (!classeId) {
@@ -97,73 +68,27 @@ export default function SeletorPericias({
         setQuantidadePericias(2);
         return;
       }
-
       setLoading(true);
       try {
-        const promises: Promise<any>[] = [];
+        const [classeData, racaData] = await Promise.all([
+          fetch(`${API_BASE_URL}/api/v1/classes/${classeId}/pericias`).then(res => res.ok ? res.json() : null),
+          racaId ? fetch(`${API_BASE_URL}/api/v1/racas/${racaId}/pericias`).then(res => res.ok ? res.json() : null) : Promise.resolve(null)
+        ]);
 
-        // Buscar perícias da classe
-        promises.push(
-          fetch(`${API_BASE_URL}/api/v1/classes/${classeId}/pericias`)
-            .then(res => res.ok ? res.json() : null)
-            .catch(() => null)
-        );
-
-        // Buscar perícias da raça se selecionada
-        if (racaId) {
-          promises.push(
-            fetch(`${API_BASE_URL}/api/v1/racas/${racaId}/pericias`)
-              .then(res => res.ok ? res.json() : null)
-              .catch(() => null)
-          );
-        } else {
-          promises.push(Promise.resolve(null));
-        }
-
-        // Buscar perícias da origem se selecionada
-        if (origemId) {
-          promises.push(
-            fetch(`${API_BASE_URL}/api/v1/origens/${origemId}/pericias`)
-              .then(res => res.ok ? res.json() : null)
-              .catch(() => null)
-          );
-        } else {
-          promises.push(Promise.resolve(null));
-        }
-
-        const [classeData, racaData, origemData] = await Promise.all(promises);
-
-        // Processar dados da classe
         if (classeData) {
           setPericiasDisponiveis(classeData.pericias_disponiveis || []);
           setQuantidadePericias(classeData.pericias_quantidade || 2);
         }
 
-        // Combinar todas as perícias automáticas
-        const todasAutomaticas: Pericia[] = [];
+        const todasAutomaticas = [
+          ...(classeData?.pericias_automaticas || []),
+          ...(racaData?.pericias || [])
+        ];
 
-        // Perícias automáticas da classe
-        if (classeData?.pericias_automaticas) {
-          todasAutomaticas.push(...classeData.pericias_automaticas);
-        }
-
-        // Perícias automáticas da raça
-        if (racaData?.pericias) {
-          todasAutomaticas.push(...racaData.pericias);
-        }
-
-        // Perícias automáticas da origem
-        if (origemData?.pericias) {
-          todasAutomaticas.push(...origemData.pericias);
-        }
-
-        // Remover duplicatas baseado no ID
         const automaticasUnicas = todasAutomaticas.filter((pericia, index, self) =>
           index === self.findIndex(p => p.id === pericia.id)
         );
-
         setPericiasAutomaticas(automaticasUnicas);
-
       } catch (error) {
         console.error('Erro ao buscar perícias:', error);
         setPericiasDisponiveis([]);
@@ -171,37 +96,27 @@ export default function SeletorPericias({
         setQuantidadePericias(2);
       } finally {
         setLoading(false);
-        // isInitialLoad é controlado por useEffect específico no modo editar
       }
     };
-
     fetchTodasPericias();
-  }, [classeId, racaId, origemId]);
+  }, [classeId, racaId]);
 
-  // Filtrar perícias disponíveis removendo apenas as automáticas (não as de raça)
-  // Perícias de raça são adicionais e não devem competir com as de classe
   const periciasParaEscolher = periciasDisponiveis.filter(
     pericia => !periciasAutomaticas.some(auto => auto.id === pericia.id)
   );
 
-  // Handle seleção de perícia
   const handlePericiaSelecionada = (periciaId: number) => {
     const novasEscolhidas = periciasEscolhidas.includes(periciaId)
       ? periciasEscolhidas.filter(id => id !== periciaId)
       : [...periciasEscolhidas, periciaId];
 
-    // Contar apenas perícias de classe (excluir perícias de raça e automáticas)
-    const periciasDeClasseEscolhidas = novasEscolhidas.filter(id => {
-      // Não contar se for perícia de raça (versatilidade)
-      const ehPericiaDaRaca = periciasDeRacaObjetos.some(racaPericia => racaPericia.id === id);
-      // Não contar se for perícia automática
-      const ehAutomatica = periciasAutomaticas.some(auto => auto.id === id);
+    const periciasDeClasseCount = novasEscolhidas.filter(id =>
+      !periciasDeRacaObjetos.some(p => p.id === id) &&
+      !periciasDeOrigemObjetos.some(p => p.id === id) &&
+      !periciasAutomaticas.some(p => p.id === id)
+    ).length;
 
-      return !ehPericiaDaRaca && !ehAutomatica;
-    });
-
-    // Limitar ao número máximo permitido apenas para perícias de classe
-    if (periciasDeClasseEscolhidas.length <= quantidadePericias) {
+    if (periciasDeClasseCount <= quantidadePericias) {
       onPericiasChange(novasEscolhidas);
     }
   };
@@ -218,6 +133,13 @@ export default function SeletorPericias({
     return cores[atributo as keyof typeof cores] || 'bg-gray-100 text-gray-800';
   };
 
+  const numeroDePericiasDeClasseEscolhidas = periciasEscolhidas.filter(id => {
+    const ehPericiaDaRaca = periciasDeRacaObjetos.some(p => p.id === id);
+    const ehPericiaDaOrigem = periciasDeOrigemObjetos.some(p => p.id === id);
+    const ehAutomatica = periciasAutomaticas.some(p => p.id === id);
+    return !ehPericiaDaRaca && !ehAutomatica && !ehPericiaDaOrigem;
+  }).length;
+
   if (!classeId) {
     return (
       <div className="text-center py-8 text-gray-500">
@@ -233,19 +155,14 @@ export default function SeletorPericias({
           Perícias
         </h3>
         <span className="text-sm text-gray-600">
-          {periciasEscolhidas.filter(id => {
-            const ehPericiaDaRaca = periciasDeRacaObjetos.some(racaPericia => racaPericia.id === id);
-            const ehAutomatica = periciasAutomaticas.some(auto => auto.id === id);
-            return !ehPericiaDaRaca && !ehAutomatica;
-          }).length}/{quantidadePericias} de classe escolhidas
+          {numeroDePericiasDeClasseEscolhidas}/{quantidadePericias} de classe escolhidas
         </span>
       </div>
 
-      {/* Perícias Automáticas */}
       {periciasAutomaticas.length > 0 && (
         <div>
           <h4 className="text-md font-medium text-gray-800 mb-3">
-            Perícias Automáticas (Classe/Raça/Origem)
+            Perícias Automáticas (Classe/Raça)
           </h4>
           <div className="grid gap-2">
             {periciasAutomaticas.map((pericia) => (
@@ -273,8 +190,38 @@ export default function SeletorPericias({
         </div>
       )}
 
-      {/* Perícias de Raça Escolhidas */}
-      {periciasDeRacaObjetos && periciasDeRacaObjetos.length > 0 && (
+      {periciasDeOrigemObjetos.length > 0 && (
+        <div>
+          <h4 className="text-md font-medium text-gray-800 mb-3">
+            Perícias Escolhidas da Origem
+          </h4>
+          <div className="grid gap-2">
+            {periciasDeOrigemObjetos.map((pericia, index) => (
+              <div
+                key={`origem-${index}`}
+                className="flex items-center justify-between p-3 bg-purple-50 border border-purple-200 rounded-lg"
+              >
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-purple-900">{pericia.nome}</span>
+                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getAtributoColor(pericia.atributo)}`}>
+                      {pericia.atributo}
+                    </span>
+                  </div>
+                  <p className="text-sm text-purple-700 mt-1">{pericia.descricao}</p>
+                </div>
+                <div className="text-purple-600">
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {periciasDeRacaObjetos.length > 0 && (
         <div>
           <h4 className="text-md font-medium text-gray-800 mb-3">
             Perícias Escolhidas da Raça
@@ -305,12 +252,10 @@ export default function SeletorPericias({
         </div>
       )}
 
-      {/* Perícias para Escolher */}
       <div>
         <h4 className="text-md font-medium text-gray-800 mb-3">
           Escolha suas Perícias de Classe
         </h4>
-
         {loading ? (
           <div className="text-center py-4">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
@@ -324,19 +269,7 @@ export default function SeletorPericias({
           <div className="grid gap-2">
             {periciasParaEscolher.map((pericia) => {
               const isSelected = periciasEscolhidas.includes(pericia.id);
-
-              // Contar apenas perícias de classe para verificar se pode selecionar mais
-              const periciasDeClasseAtual = periciasEscolhidas.filter(id => {
-                // Não contar se for perícia de raça (versatilidade)
-                const ehPericiaDaRaca = periciasDeRacaObjetos.some(racaPericia => racaPericia.id === id);
-                // Não contar se for perícia automática
-                const ehAutomatica = periciasAutomaticas.some(auto => auto.id === id);
-
-                return !ehPericiaDaRaca && !ehAutomatica;
-              });
-
-              const canSelect = isSelected || periciasDeClasseAtual.length < quantidadePericias;
-
+              const canSelect = isSelected || numeroDePericiasDeClasseEscolhidas < quantidadePericias;
               return (
                 <button
                   key={pericia.id}

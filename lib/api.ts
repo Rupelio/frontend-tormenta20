@@ -171,6 +171,9 @@ class ApiService {
   async getHabilidadesOrigem(origemId: number): Promise<any> {
     return this.request<any>(`/api/v1/habilidades/origem/${origemId}`);
   }
+  async getPoderesOrigem(origemId: number): Promise<any> {
+    return this.request<any>(`/api/v1/poderes/origem/${origemId}`);
+  }
 
   // Buscar habilidades por divindade e nível
   async getHabilidadesDivindade(divindadeId: number, nivel: number): Promise<any> {

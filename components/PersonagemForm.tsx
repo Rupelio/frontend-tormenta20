@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
-import { Personagem, Raca, Classe, Origem, Divindade, Habilidade, Pericia } from "@/types";
+import { Personagem, Raca, Classe, Origem, Divindade, Habilidade, Pericia, Poder } from "@/types";
 import { api } from "../lib/api";
 import { usePersonagemCache } from "../hooks/useLocalStorage";
 import { usePersonagemValidation } from "../hooks/usePersonagemValidation";
@@ -15,8 +15,9 @@ import SeletorHabilidades from "./SeletorHabilidades";
 import SeletorPoderesDivinos from "./SeletorPoderesDivinos";
 import SeletorPoderesClasse from "./SeletorPoderesClasse";
 import PoderesDivinosSelecionados from "./PoderesDivinosSelecionados";
-import PoderesOrigemAutomaticos from "./PoderesOrigemAutomaticos";
 import EscolhasRaca from "./EscolhasRaca";
+import SeletorBeneficiosOrigem from "./SeletorBeneficiosOrigem";
+import BeneficiosOrigemSelecionados from "./BeneficiosOrigemSelecionados";
 
 interface PersonagemFormProps {
   editId?: string | null;
@@ -66,10 +67,11 @@ function PersonagemFormComponent({ editId }: PersonagemFormProps) {
     for: 0, des: 0, con: 0, int: 0, sab: 0, car: 0,
   });
 
-  const [racas, setRacas] = useState<Raca[]>([]);
-  const [classes, setClasses] = useState<Classe[]>([]);
-  const [origens, setOrigens] = useState<Origem[]>([]);
-  const [divindades, setDivindades] = useState<Divindade[]>([]);
+  // Estados de Dados
+    const [racas, setRacas] = useState<Raca[]>([]);
+    const [classes, setClasses] = useState<Classe[]>([]);
+    const [origens, setOrigens] = useState<Origem[]>([]);
+    const [divindades, setDivindades] = useState<Divindade[]>([]);
 
   // Estados para habilidades carregadas da API
   const [habilidadesRaca, setHabilidadesRaca] = useState<Habilidade[]>([]);
@@ -79,6 +81,10 @@ function PersonagemFormComponent({ editId }: PersonagemFormProps) {
 
   // Estado para atributos livres
   const [atributosLivresEscolhidos, setAtributosLivresEscolhidos] = useState<string[]>([]);
+  const [beneficiosOrigem, setBeneficiosOrigem] = useState<{ pericias: number[], poderes: number[] }>({ pericias: [], poderes: [] });
+
+    const [opcoesPericiasOrigem, setOpcoesPericiasOrigem] = useState<Pericia[]>([]);
+    const [opcoesPoderesOrigem, setOpcoesPoderesOrigem] = useState<Poder[]>([]);
 
   // Estado para controlar se deve mostrar o botão de recuperar dados
   const [showRecoverButton, setShowRecoverButton] = useState(false);
@@ -92,7 +98,7 @@ function PersonagemFormComponent({ editId }: PersonagemFormProps) {
 
   // Estado para perícias
   const [periciasEscolhidas, setPericiasEscolhidas] = useState<number[]>([]);
-  const [periciasDeRacaEscolhidas, setPericiasDeRacaEscolhidas] = useState<number[]>([]);
+  const [periciasDeRacaEscolhidas, setPericiasDeRacaEscolhidas] = useState<Pericia[]>([]);
 
   // Estado para poderes de classe selecionados
   const [poderesClasseSelecionados, setPoderesClasseSelecionados] = useState<number[]>([]);
@@ -112,6 +118,18 @@ function PersonagemFormComponent({ editId }: PersonagemFormProps) {
     racaSelecionada.atributo_bonus_2?.toLowerCase() === 'livre' ||
     racaSelecionada.atributo_bonus_3?.toLowerCase() === 'livre'
   );
+
+  const periciasDeOrigemEscolhidasObjetos = useMemo(() => {
+  return opcoesPericiasOrigem.filter(pericia =>
+    beneficiosOrigem.pericias.includes(pericia.id)
+  );
+  // Esta lista só será recriada se opcoesPericiasOrigem ou beneficiosOrigem.pericias mudar.
+}, [opcoesPericiasOrigem, beneficiosOrigem.pericias]);
+
+const periciasDeRacaEscolhidasObjetos = useMemo(() => {
+  return periciasDeRacaEscolhidas;
+  // Esta lista só será recriada se periciasDeRacaEscolhidas mudar.
+}, [periciasDeRacaEscolhidas]);
 
   useEffect(() => {
     const carregarDadosIniciais = async () => {
@@ -155,6 +173,7 @@ function PersonagemFormComponent({ editId }: PersonagemFormProps) {
         atributosLivresEscolhidos,
         escolhasRaca,
         periciasEscolhidas,
+        beneficiosOrigem,
         poderesClasseSelecionados,
         poderesDivinosSelecionados
       };
@@ -230,17 +249,18 @@ function PersonagemFormComponent({ editId }: PersonagemFormProps) {
     }, [baseAtributos, racaSelecionada, atributosLivresEscolhidos]); // Dependências
 
   useEffect(() => {
-    // Se for a montagem inicial do componente, simplesmente marca que não é mais
-    // e não executa o resto do código.
+    // Este useEffect agora só controla o isInitialMount.
+    // O useEffect que depende de `personagem.raca_id` cuidará da limpeza.
     if (isInitialMount.current) {
         isInitialMount.current = false;
-    } else {
-        // A partir da SEGUNDA renderização, qualquer mudança na raça
-        // irá limpar os dados com segurança.
-        setAtributosLivresEscolhidos([]);
-        setEscolhasRaca({});
     }
-}, [personagem.raca_id]);
+  }, []);
+  useEffect(() => {
+    // Limpa os benefícios escolhidos ao trocar de origem, exceto no carregamento inicial
+    if (!isInitialMount.current) {
+      setBeneficiosOrigem({ pericias: [], poderes: [] });
+    }
+  }, [personagem.origem_id]);
 
 
   // Reset poderes divinos quando mudar de divindade
@@ -257,6 +277,46 @@ function PersonagemFormComponent({ editId }: PersonagemFormProps) {
       carregarTodasHabilidades();
     }
   }, [mounted, personagem.raca_id, personagem.classe_id, personagem.origem_id, personagem.divindade_id, personagem.nivel]);
+
+  // Busca as OPÇÕES da origem quando ela muda
+    useEffect(() => {
+    if (!personagem.origem_id) {
+        setOpcoesPericiasOrigem([]);
+        setOpcoesPoderesOrigem([]);
+        return;
+    }
+    const carregarOpcoesOrigem = async () => {
+        await withLoading('origemData', async () => {
+            try {
+                // APENAS DUAS CHAMADAS, como era originalmente
+                const [periciasData, poderesData] = await Promise.all([
+                    api.getPericiasOrigem(personagem.origem_id!),
+                    api.getPoderesOrigem(personagem.origem_id!) // Esta API já busca TUDO.
+                ]);
+
+                setOpcoesPericiasOrigem(periciasData?.pericias || []);
+                setOpcoesPoderesOrigem(poderesData || []);
+
+            } catch (error) {
+                console.error("Erro ao carregar opções da origem:", error);
+                setOpcoesPericiasOrigem([]);
+                setOpcoesPoderesOrigem([]);
+            }
+        });
+    };
+    carregarOpcoesOrigem();
+}, [personagem.origem_id]);
+
+    // **A MÁGICA ACONTECE AQUI**
+    useEffect(() => {
+        const periciasDeOutrasFontes = periciasEscolhidas.filter(id =>
+            !opcoesPericiasOrigem.some(p => p.id === id)
+        );
+        const novasPericias = [...new Set([...periciasDeOutrasFontes, ...beneficiosOrigem.pericias])];
+        if (JSON.stringify(novasPericias.sort()) !== JSON.stringify(periciasEscolhidas.sort())) {
+            setPericiasEscolhidas(novasPericias);
+        }
+    }, [beneficiosOrigem.pericias, opcoesPericiasOrigem]);
 
   const validarFormulario = (): boolean => {
     // Validação simplificada para debug
@@ -328,6 +388,9 @@ function PersonagemFormComponent({ editId }: PersonagemFormProps) {
       }
       if (cachedPersonagem.poderesDivinosSelecionados) {
         setPoderesDivinosSelecionados(cachedPersonagem.poderesDivinosSelecionados);
+      }
+      if (cachedPersonagem.beneficiosOrigem) {
+        setBeneficiosOrigem(cachedPersonagem.beneficiosOrigem);
       }
 
       setShowRecoverButton(false);
@@ -466,9 +529,15 @@ function PersonagemFormComponent({ editId }: PersonagemFormProps) {
       } catch (e) { console.warn("Não foi possível carregar poderes divinos"); }
 
       try {
-        const poderesClasse = await api.getPersonagemPoderesClasse(id);
-        if (poderesClasse.poderes_ids) setPoderesClasseSelecionados(poderesClasse.poderes_ids);
-      } catch (e) { console.warn("Não foi possível carregar poderes de classe"); }
+        // Supondo que você criou esta nova função na sua API
+        const beneficios = await api.getPersonagemBeneficiosOrigem(id);
+        if (beneficios && (beneficios.pericias || beneficios.poderes)) {
+            setBeneficiosOrigem({
+                pericias: beneficios.pericias || [],
+                poderes: beneficios.poderes || []
+            });
+        }
+      } catch(e) { console.warn("Não foi possível carregar benefícios da origem"); }
 
     });
   } catch (error) {
@@ -536,7 +605,9 @@ function PersonagemFormComponent({ editId }: PersonagemFormProps) {
             atributosLivres: temAtributosLivres ? atributosLivresEscolhidos : [],
             pericias_selecionadas: periciasEscolhidas,
             poderes_classe: poderesClasseSelecionados,
-            poderes_divinos: poderesDivinosSelecionados
+            poderes_divinos: poderesDivinosSelecionados,
+            beneficios_origem_pericias: beneficiosOrigem.pericias,
+            beneficios_origem_poderes: beneficiosOrigem.poderes
           };
 
           // Atualizar personagem existente
@@ -560,7 +631,9 @@ function PersonagemFormComponent({ editId }: PersonagemFormProps) {
               atributosLivres: personagemData.atributosLivres || [],
               pericias_selecionadas: personagemData.pericias_selecionadas || [],
               poderes_classe: personagemData.poderes_classe || [],
-              poderes_divinos: personagemData.poderes_divinos || []
+              poderes_divinos: personagemData.poderes_divinos || [],
+              beneficios_origem_pericias: beneficiosOrigem.pericias,
+              beneficios_origem_poderes: beneficiosOrigem.poderes
             };
 
             // Só incluir divindade_id se realmente houver uma divindade selecionada
@@ -687,49 +760,48 @@ function PersonagemFormComponent({ editId }: PersonagemFormProps) {
   const handleEscolhasRacaChange = (escolhas: any) => {
     setEscolhasRaca(escolhas);
 
-    // Extrair perícias das escolhas de raça
-    const periciasDeRaca: number[] = [];
+    // --- NOVA LÓGICA DE EXTRAÇÃO ---
+    // 1. Inicia um array vazio para guardar os objetos de perícia encontrados.
+    const periciasDeRacaEncontradas: Pericia[] = [];
 
-    Object.values(escolhas).forEach((escolha: any) => {
-      if (escolha.pericias && Array.isArray(escolha.pericias)) {
-        escolha.pericias.forEach((pericia: any) => {
-          if (typeof pericia === 'number') {
-            periciasDeRaca.push(pericia);
-          } else if (pericia.id) {
-            periciasDeRaca.push(pericia.id);
-          }
-        });
-      }
-    });
+    // 2. Procura de forma recursiva dentro do objeto de escolhas.
+    const encontrarPericias = (obj: any) => {
+        // Se encontrarmos um array chamado 'pericias', extraímos seus objetos.
+        if (obj && Array.isArray(obj.pericias)) {
+            obj.pericias.forEach((pericia: any) => {
+                if (typeof pericia === 'object' && pericia.id) {
+                    periciasDeRacaEncontradas.push(pericia);
+                }
+            });
+        }
+        // Se não, continua procurando nos sub-objetos.
+        else if (typeof obj === 'object' && obj !== null) {
+            Object.values(obj).forEach(encontrarPericias);
+        }
+    };
 
-    // Armazenar os IDs das perícias de raça
-    setPericiasDeRacaEscolhidas(periciasDeRaca);
+    // 3. Inicia a busca.
+    encontrarPericias(escolhas);
+    // --- FIM DA NOVA LÓGICA ---
 
-    // Combinar perícias mantendo as de classe e adicionando as de raça
+    // 4. Pega os IDs das perícias de raça da SELEÇÃO ANTERIOR (do estado atual).
+    const idsDeRacaAnteriores = periciasDeRacaEscolhidas.map(p => p.id);
+
+    // 5. Atualiza o estado que guarda os OBJETOS da perícia de raça.
+    setPericiasDeRacaEscolhidas(periciasDeRacaEncontradas);
+
+    // 6. Atualiza a lista MESTRA de todos os IDs de perícias.
     setPericiasEscolhidas(prev => {
-      // Remover perícias de raça antigas primeiro
-      const periciasNaoDeRaca = prev.filter(id => !getPericiasDeRacaAnteriores().includes(id));
-      // Adicionar novas perícias de raça
-      return [...new Set([...periciasNaoDeRaca, ...periciasDeRaca])];
-    });
-  };
+        // Remove os IDs de raça antigos da lista mestra.
+        const periciasSemAsDeRacaAntigas = prev.filter(id => !idsDeRacaAnteriores.includes(id));
 
-  // Função auxiliar para obter perícias de raça anteriores
-  const getPericiasDeRacaAnteriores = (): number[] => {
-    const periciasAnteriores: number[] = [];
-    Object.values(escolhasRaca).forEach((escolha: any) => {
-      if (escolha.pericias && Array.isArray(escolha.pericias)) {
-        escolha.pericias.forEach((pericia: any) => {
-          if (typeof pericia === 'number') {
-            periciasAnteriores.push(pericia);
-          } else if (pericia.id) {
-            periciasAnteriores.push(pericia.id);
-          }
-        });
-      }
+        // Pega os IDs das novas perícias encontradas.
+        const idsDeRacaNovas = periciasDeRacaEncontradas.map(p => p.id);
+
+        // Retorna a lista mestra atualizada, sem duplicatas.
+        return [...new Set([...periciasSemAsDeRacaAntigas, ...idsDeRacaNovas])];
     });
-    return periciasAnteriores;
-  };
+};
 
   const calculateTotalPV = (): number => {
     const classeEscolhida = classes.find(c => getId(c) === personagem.classe_id);
@@ -1112,42 +1184,38 @@ function PersonagemFormComponent({ editId }: PersonagemFormProps) {
                   Origem
                 </label>
                 <select
-                  value={personagem.origem_id ? String(personagem.origem_id) : ""}
-                  onChange={(e) => {
-                    const value = e.target.value ? parseInt(e.target.value) : undefined;
-                    setPersonagem(prev => ({ ...prev, origem_id: value }));
-                  }}
-                  className={`w-full p-3 border rounded-lg text-black ${
-                    errors.origem_id ? "border-red-500" : "border-gray-300"
-                  }`}
+                    value={personagem.origem_id || ''}
+                    onChange={(e) => {
+                        const value = e.target.value ? parseInt(e.target.value) : undefined;
+                        setPersonagem(prev => ({ ...prev, origem_id: value }));
+                        setBeneficiosOrigem({ pericias: [], poderes: [] }); // Reseta a escolha ao trocar
+                    }}
+                    className="w-full p-3 border rounded-lg"
                 >
-                  <option value="">Selecione uma origem</option>
-                  {origens.map(origem => (
-                    <option key={getId(origem)} value={getId(origem)}>
-                      {origem.nome}
-                    </option>
-                  ))}
+                    <option value="">Selecione uma origem</option>
+                    {origens.map(o => <option key={getId(o)} value={getId(o)}>{o.nome}</option>)}
                 </select>
                 {errors.origem_id && (
                   <p className="text-red-500 text-sm mt-1">{errors.origem_id}</p>
                 )}
 
-                {/* Mostrar descrição da origem selecionada */}
                 {personagem.origem_id && (
+                <>
                   <div className="mt-2 p-2 bg-gray-50 rounded text-sm text-gray-700">
                     {origens.find(o => getId(o) === personagem.origem_id)?.descricao}
                   </div>
-                )}
 
-                {/* Perícias da Origem */}
-                {personagem.origem_id && (
-                  <OrigemPericiasInfo origemId={personagem.origem_id} />
-                )}
-
-                {/* Poderes de Origem Automáticos */}
-                {personagem.origem_id && (
-                  <PoderesOrigemAutomaticos origemId={personagem.origem_id} />
-                )}
+                  {/* COMPONENTE SELETOR */}
+                    <SeletorBeneficiosOrigem
+                        origemId={personagem.origem_id}
+                        beneficiosAtuais={beneficiosOrigem}
+                        onBeneficiosChange={setBeneficiosOrigem}
+                        periciasDisponiveis={opcoesPericiasOrigem}
+                        poderesDisponiveis={opcoesPoderesOrigem}
+                        loading={isLoading('origemData')}
+                    />
+                </>
+              )}
               </div>
 
               {/* Divindade */}
@@ -1259,10 +1327,10 @@ function PersonagemFormComponent({ editId }: PersonagemFormProps) {
             <SeletorPericias
               classeId={personagem.classe_id || null}
               racaId={personagem.raca_id || null}
-              origemId={personagem.origem_id || null}
               periciasEscolhidas={periciasEscolhidas}
               onPericiasChange={setPericiasEscolhidas}
-              periciasDeRaca={periciasDeRacaEscolhidas}
+              periciasDeRacaObjetos={periciasDeRacaEscolhidasObjetos}
+              periciasDeOrigemObjetos={periciasDeOrigemEscolhidasObjetos}
               isEditing={isEditing}
             />
           </div>
@@ -1301,10 +1369,13 @@ function PersonagemFormComponent({ editId }: PersonagemFormProps) {
                 />
               )}
 
-              {/* Poderes de Origem Automáticos */}
-              {personagem.origem_id && (
-                <PoderesOrigemAutomaticos origemId={personagem.origem_id} />
-              )}
+              {habilidadesOrigem.length > 0 && (
+                <BeneficiosOrigemSelecionados
+                    beneficiosAtuais={beneficiosOrigem}
+                    periciasDisponiveis={opcoesPericiasOrigem}
+                    poderesDisponiveis={opcoesPoderesOrigem}
+                />
+            )}
 
               {/* Poderes Divinos Selecionados */}
               {personagem.divindade_id && poderesDivinosSelecionados.length > 0 && (
