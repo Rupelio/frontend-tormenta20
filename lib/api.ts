@@ -1,29 +1,50 @@
 // lib/api.ts
+
 import { Raca, Classe, Origem, Divindade, Personagem } from '@/types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
+
+// Chave para salvar o ID no localStorage
+const SESSION_STORAGE_KEY = 'user_session_id';
 
 class ApiService {
   private async request<T>(endpoint: string, options?: RequestInit): Promise<T> {
     const url = `${API_BASE_URL}${endpoint}`;
 
+    // Pega o ID de sessão do localStorage
+    const sessionId = typeof window !== 'undefined' ? window.localStorage.getItem(SESSION_STORAGE_KEY) : null;
+
+    const headers: { [key: string]: string } = {
+      'Content-Type': 'application/json',
+      // Espalha os headers existentes das opções, se houver
+      ...(options?.headers as { [key: string]: string }),
+    };
+
+    // Adiciona o cabeçalho com o ID de sessão, se existir
+    if (sessionId) {
+      headers['X-User-Session-ID'] = sessionId;
+    }
+
     try {
       const response = await fetch(url, {
-        credentials: 'include', // Inclui cookies nas requisições
-        headers: {
-          'Content-Type': 'application/json',
-          ...options?.headers,
-        },
+        credentials: 'include', // Continua incluindo cookies
+        headers: headers, // Usa os novos cabeçalhos
         ...options,
       });
+
+      // ✅ Lógica para salvar/atualizar o ID de sessão no localStorage
+      const responseSessionId = response.headers.get('X-User-Session-ID');
+      if (responseSessionId && typeof window !== 'undefined') {
+        window.localStorage.setItem(SESSION_STORAGE_KEY, responseSessionId);
+      }
 
       if (!response.ok) {
         throw new Error(`API Error: ${response.status} ${response.statusText}`);
       }
 
       if (response.status === 204) {
-				return undefined as T;
-			}
+        return undefined as T;
+      }
 
       return response.json();
     } catch (error) {
@@ -34,6 +55,7 @@ class ApiService {
     }
   }
 
+  // ... (o resto dos seus métodos: getRacas, getClasses, etc., permanecem iguais)
   // Raças
   async getRacas(): Promise<Raca[]> {
     return this.request<Raca[]>('/api/v1/racas');
@@ -196,5 +218,6 @@ class ApiService {
     }
   }
 }
+
 
 export const api = new ApiService();
