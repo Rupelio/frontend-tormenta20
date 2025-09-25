@@ -149,16 +149,18 @@ const periciasDeRacaEscolhidasObjetos = useMemo(() => {
 
             // DEPOIS de carregar os dados básicos, verifica se está em modo de edição
             if (isEditing && originalPersonagemId) {
-            // Passa as raças já carregadas para a função de edição
-            await carregarPersonagemParaEdicao(originalPersonagemId, racasData);
-            } else if (hasCachedData() && cachedPersonagem) {
-            setShowRecoverButton(true);
-            }
+              await carregarPersonagemParaEdicao(originalPersonagemId, racasData);
+            } else if (hasCachedData() && cachedPersonagem) {
+              setShowRecoverButton(true);
+            }
         });
         } catch (error) {
-        console.error("Erro fatal ao carregar dados:", error);
-        setErrors({ geral: "Não foi possível carregar os dados básicos do jogo." });
-        }
+          console.error("Erro fatal ao carregar dados:", error);
+          setErrors({ geral: "Não foi possível carregar os dados básicos do jogo." });
+        } finally {
+          // ADICIONE ESTA LINHA DENTRO DO FINALLY
+          isInitialMount.current = false;
+        }
     };
 
     setMounted(true);
@@ -248,21 +250,6 @@ const periciasDeRacaEscolhidasObjetos = useMemo(() => {
 
     }, [baseAtributos, racaSelecionada, atributosLivresEscolhidos]); // Dependências
 
-  useEffect(() => {
-    // Este useEffect agora só controla o isInitialMount.
-    // O useEffect que depende de `personagem.raca_id` cuidará da limpeza.
-    if (isInitialMount.current) {
-        isInitialMount.current = false;
-    }
-  }, []);
-  useEffect(() => {
-    // Limpa os benefícios escolhidos ao trocar de origem, exceto no carregamento inicial
-    if (!isInitialMount.current) {
-      setBeneficiosOrigem({ pericias: [], poderes: [] });
-    }
-  }, [personagem.origem_id]);
-
-
   // Reset poderes divinos quando mudar de divindade
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -317,6 +304,45 @@ const periciasDeRacaEscolhidasObjetos = useMemo(() => {
             setPericiasEscolhidas(novasPericias);
         }
     }, [beneficiosOrigem.pericias, opcoesPericiasOrigem]);
+
+    useEffect(() => {
+  // Se não houver escolhas, não faz nada.
+  if (Object.keys(escolhasRaca).length === 0) {
+    setPericiasDeRacaEscolhidas([]);
+    return;
+  }
+
+  // --- LÓGICA DE EXTRAÇÃO (movida de handleEscolhasRacaChange para cá) ---
+  const periciasDeRacaEncontradas: Pericia[] = [];
+
+  const encontrarPericias = (obj: any) => {
+    if (obj && Array.isArray(obj.pericias)) {
+      obj.pericias.forEach((pericia: any) => {
+        if (typeof pericia === 'object' && pericia.id) {
+          periciasDeRacaEncontradas.push(pericia);
+        }
+      });
+    } else if (typeof obj === 'object' && obj !== null) {
+      Object.values(obj).forEach(encontrarPericias);
+    }
+  };
+  encontrarPericias(escolhasRaca);
+  // --- FIM DA LÓGICA DE EXTRAÇÃO ---
+
+  // Pega os IDs das perícias de raça da SELEÇÃO ANTERIOR
+  const idsDeRacaAnteriores = periciasDeRacaEscolhidas.map(p => p.id);
+
+  // Atualiza o estado que guarda os OBJETOS da perícia de raça.
+  setPericiasDeRacaEscolhidas(periciasDeRacaEncontradas);
+
+  // Atualiza a lista MESTRA de todos os IDs de perícias.
+  setPericiasEscolhidas(prev => {
+    const periciasSemAsDeRacaAntigas = prev.filter(id => !idsDeRacaAnteriores.includes(id));
+    const idsDeRacaNovas = periciasDeRacaEncontradas.map(p => p.id);
+    return [...new Set([...periciasSemAsDeRacaAntigas, ...idsDeRacaNovas])];
+  });
+
+}, [escolhasRaca]);
 
   const validarFormulario = (): boolean => {
     // Validação simplificada para debug
@@ -759,48 +785,6 @@ const periciasDeRacaEscolhidasObjetos = useMemo(() => {
 
   const handleEscolhasRacaChange = (escolhas: any) => {
     setEscolhasRaca(escolhas);
-
-    // --- NOVA LÓGICA DE EXTRAÇÃO ---
-    // 1. Inicia um array vazio para guardar os objetos de perícia encontrados.
-    const periciasDeRacaEncontradas: Pericia[] = [];
-
-    // 2. Procura de forma recursiva dentro do objeto de escolhas.
-    const encontrarPericias = (obj: any) => {
-        // Se encontrarmos um array chamado 'pericias', extraímos seus objetos.
-        if (obj && Array.isArray(obj.pericias)) {
-            obj.pericias.forEach((pericia: any) => {
-                if (typeof pericia === 'object' && pericia.id) {
-                    periciasDeRacaEncontradas.push(pericia);
-                }
-            });
-        }
-        // Se não, continua procurando nos sub-objetos.
-        else if (typeof obj === 'object' && obj !== null) {
-            Object.values(obj).forEach(encontrarPericias);
-        }
-    };
-
-    // 3. Inicia a busca.
-    encontrarPericias(escolhas);
-    // --- FIM DA NOVA LÓGICA ---
-
-    // 4. Pega os IDs das perícias de raça da SELEÇÃO ANTERIOR (do estado atual).
-    const idsDeRacaAnteriores = periciasDeRacaEscolhidas.map(p => p.id);
-
-    // 5. Atualiza o estado que guarda os OBJETOS da perícia de raça.
-    setPericiasDeRacaEscolhidas(periciasDeRacaEncontradas);
-
-    // 6. Atualiza a lista MESTRA de todos os IDs de perícias.
-    setPericiasEscolhidas(prev => {
-        // Remove os IDs de raça antigos da lista mestra.
-        const periciasSemAsDeRacaAntigas = prev.filter(id => !idsDeRacaAnteriores.includes(id));
-
-        // Pega os IDs das novas perícias encontradas.
-        const idsDeRacaNovas = periciasDeRacaEncontradas.map(p => p.id);
-
-        // Retorna a lista mestra atualizada, sem duplicatas.
-        return [...new Set([...periciasSemAsDeRacaAntigas, ...idsDeRacaNovas])];
-    });
 };
 
   const calculateTotalPV = (): number => {

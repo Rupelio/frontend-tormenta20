@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
 
@@ -34,31 +34,26 @@ export default function SeletorPericias({
   const [periciasAutomaticas, setPericiasAutomaticas] = useState<Pericia[]>([]);
   const [quantidadePericias, setQuantidadePericias] = useState(2);
   const [loading, setLoading] = useState(false);
-  const [isInitialLoad, setIsInitialLoad] = useState(isEditing);
+  const isInitialRender = useRef(true);
 
   useEffect(() => {
-    if (isEditing && isInitialLoad && periciasEscolhidas.length > 0 && periciasDisponiveis.length > 0) {
-      setTimeout(() => { setIsInitialLoad(false); }, 100);
-    }
-  }, [isEditing, isInitialLoad, periciasEscolhidas.length, periciasDisponiveis.length]);
-
-  useEffect(() => {
-    if (isEditing && isInitialLoad) {
+    if (isInitialRender.current) {
+      isInitialRender.current = false;
       return;
     }
 
-    if (classeId) {
-      const periciasNaoDeClasse = periciasEscolhidas.filter(id => {
-        const ehPericiaDaRaca = periciasDeRacaObjetos.some(p => p.id === id);
-        const ehPericiaDaOrigem = periciasDeOrigemObjetos.some(p => p.id === id);
-        const ehAutomatica = periciasAutomaticas.some(p => p.id === id);
-        return ehPericiaDaRaca || ehAutomatica || ehPericiaDaOrigem;
-      });
-      onPericiasChange(periciasNaoDeClasse);
-    } else {
-      onPericiasChange([]);
-    }
-  }, [classeId, periciasDeRacaObjetos, periciasDeOrigemObjetos, periciasAutomaticas]);
+    console.log("Classe foi alterada. Resetando perícias de classe selecionadas.");
+
+    const periciasParaManter = periciasEscolhidas.filter(id => {
+      const ehPericiaDaRaca = periciasDeRacaObjetos.some(p => p.id === id);
+      const ehPericiaDaOrigem = periciasDeOrigemObjetos.some(p => p.id === id);
+      const ehAutomatica = periciasAutomaticas.some(p => p.id === id);
+      return ehPericiaDaRaca || ehPericiaDaOrigem || ehAutomatica;
+    });
+    onPericiasChange(periciasParaManter);
+
+  }, [classeId]);
+
 
   useEffect(() => {
     const fetchTodasPericias = async () => {
