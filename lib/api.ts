@@ -27,9 +27,9 @@ class ApiService {
 
     try {
       const response = await fetch(url, {
+        ...options,
         credentials: 'include', // Continua incluindo cookies
         headers: headers, // Usa os novos cabeçalhos
-        ...options,
       });
 
       // ✅ Lógica para salvar/atualizar o ID de sessão no localStorage
