@@ -184,6 +184,17 @@ class ApiService {
   async healthCheck(): Promise<{ status: string }> {
     return this.request<{ status: string }>('/health');
   }
+
+  async getPersonagemBeneficiosOrigem(id: number): Promise<{ pericias: number[], poderes: number[] }> {
+    try {
+      const response = await this.request<{ pericias: number[], poderes: number[] }>(`/api/v1/personagens/${id}/beneficios-origem`);
+      // A função request já retorna o JSON parseado, então podemos usar diretamente.
+      return response || { pericias: [], poderes: [] };
+    } catch (error) {
+      console.error('Erro ao buscar benefícios de origem do personagem:', error);
+      return { pericias: [], poderes: [] };
+    }
+  }
 }
 
 export const api = new ApiService();
