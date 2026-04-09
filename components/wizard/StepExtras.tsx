@@ -1,53 +1,70 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { PersonagemItem } from "@/types";
-import { categoriasItens, ItemPreDefinido, todosOsItens, itensIniciaisPorOrigem } from "@/data/itensT20";
+import { PersonagemItem, Classe } from "@/types";
+import { categoriasItens, ItemPreDefinido, armasSimples, armasMarciais, armaduras, escudos } from "@/data/itensT20";
+import { api } from "@/lib/api";
 
-export default function StepExtras({ personagem, setPersonagem, origens, getId }: any) {
+const getId = (item: any) => item?.ID || item?.id || 0;
+
+export default function StepExtras({ personagem, setPersonagem, origens, classeEscolhida }: any) {
   const [categoriaAberta, setCategoriaAberta] = useState<string | null>(null);
   const [busca, setBusca] = useState('');
   const [modoManual, setModoManual] = useState(false);
   const [novoItem, setNovoItem] = useState({ nome: '', tipo: 'item', quantidade: 1, peso: 0, valor: 0, descricao: '' });
+  const [kitAplicado, setKitAplicado] = useState(false);
+
+  // Escolhas de equipamento inicial
+  const [armaSimplesSelecionada, setArmaSimplesSelecionada] = useState('');
+  const [armaMarcialSelecionada, setArmaMarcialSelecionada] = useState('');
+  const [armaduraSelecionada, setArmaduraSelecionada] = useState('');
 
   const itens: PersonagemItem[] = personagem.itens || [];
+  const classe: Classe | null = classeEscolhida || null;
+  const origemSelecionada = origens?.find((o: any) => getId(o) === personagem.origem_id);
+  const isArcanista = classe?.nome === 'Arcanista';
 
-  const origemNome = origens?.find((o: any) => getId(o) === personagem.origem_id)?.nome || '';
-
-  // Aplicar kit inicial AUTOMATICAMENTE quando o step abre (nivel 1, sem itens)
+  // Aplicar kit inicial automaticamente (nivel 1, primeira vez no step)
   useEffect(() => {
-    if (personagem.nivel === 1 && (!personagem.itens || personagem.itens.length === 0)) {
-      const itensIniciais: PersonagemItem[] = [];
+    if (personagem.nivel !== 1 || kitAplicado || itens.length > 0) return;
 
-      // Itens base de todo personagem nivel 1 (regra T20)
-      const itensBase = ['Mochila', 'Saco de dormir', 'Traje de viajante'];
-      itensBase.forEach(nome => {
-        const item = todosOsItens.find(i => i.nome === nome);
-        if (item) {
-          itensIniciais.push({ nome: item.nome, tipo: item.tipo, quantidade: 1, peso: item.peso, valor: item.preco, descricao: '' });
-        }
+    const itensIniciais: PersonagemItem[] = [];
+
+    // Itens base de todo personagem nivel 1
+    itensIniciais.push({ nome: 'Mochila', tipo: 'equipamento', quantidade: 1, peso: 0, valor: 2, descricao: '' });
+    itensIniciais.push({ nome: 'Saco de dormir', tipo: 'equipamento', quantidade: 1, peso: 1, valor: 1, descricao: '' });
+    itensIniciais.push({ nome: 'Traje de viajante', tipo: 'vestuario', quantidade: 1, peso: 0, valor: 10, descricao: '' });
+
+    // Itens da origem vindos do BACKEND
+    const itensOrigem = origemSelecionada?.itens || [];
+    for (const item of itensOrigem) {
+      itensIniciais.push({
+        nome: item.nome,
+        tipo: item.tipo || 'item',
+        quantidade: item.quantidade || 1,
+        peso: 0,
+        valor: 0,
+        descricao: item.descricao || '',
       });
-
-      // Itens da origem
-      if (origemNome) {
-        const itensOrigem = itensIniciaisPorOrigem[origemNome] || [];
-        itensOrigem.forEach(nomeItem => {
-          // Se tem "ou", pega o primeiro como sugestao
-          const nomeReal = nomeItem.includes(' ou ') ? nomeItem.split(' ou ')[0].trim() : nomeItem;
-          const item = todosOsItens.find(i => i.nome === nomeReal);
-          if (item) {
-            itensIniciais.push({ nome: item.nome, tipo: item.tipo, quantidade: 1, peso: item.peso, valor: item.preco, descricao: '' });
-          } else {
-            // Item nao encontrado no catalogo, adicionar como texto
-            itensIniciais.push({ nome: nomeReal, tipo: 'equipamento', quantidade: 1, peso: 0, valor: 0, descricao: 'Item da origem' });
-          }
-        });
-      }
-
-      if (itensIniciais.length > 0) {
-        setPersonagem((prev: any) => ({ ...prev, itens: itensIniciais }));
-      }
     }
-  }, []); // Roda uma vez ao montar o step
+
+    if (itensIniciais.length > 0) {
+      setPersonagem((prev: any) => ({ ...prev, itens: itensIniciais }));
+      setKitAplicado(true);
+    }
+  }, [origemSelecionada]);
+
+  // Quando seleciona arma/armadura inicial, adicionar ao inventario
+  const adicionarEscolhaInicial = (nomeItem: string, lista: ItemPreDefinido[]) => {
+    if (!nomeItem) return;
+    const item = lista.find(i => i.nome === nomeItem);
+    if (!item) return;
+    const novoPersonagemItem: PersonagemItem = {
+      nome: item.nome, tipo: item.tipo, quantidade: 1,
+      peso: item.peso, valor: item.preco,
+      descricao: [item.dano, item.critico, item.tipoDano].filter(Boolean).join(' | '),
+    };
+    setPersonagem((prev: any) => ({ ...prev, itens: [...(prev.itens || []), novoPersonagemItem] }));
+  };
 
   const adicionarItemPreDefinido = (item: ItemPreDefinido) => {
     const existente = itens.findIndex(i => i.nome === item.nome);
@@ -57,11 +74,7 @@ export default function StepExtras({ personagem, setPersonagem, origens, getId }
       setPersonagem((prev: any) => ({ ...prev, itens: novosItens }));
     } else {
       const novoPersonagemItem: PersonagemItem = {
-        nome: item.nome,
-        tipo: item.tipo,
-        quantidade: 1,
-        peso: item.peso,
-        valor: item.preco,
+        nome: item.nome, tipo: item.tipo, quantidade: 1, peso: item.peso, valor: item.preco,
         descricao: [item.dano, item.critico, item.tipoDano, item.alcance, item.bonusDefesa ? `Def +${item.bonusDefesa}` : ''].filter(Boolean).join(' | '),
       };
       setPersonagem((prev: any) => ({ ...prev, itens: [...(prev.itens || []), novoPersonagemItem] }));
@@ -80,39 +93,91 @@ export default function StepExtras({ personagem, setPersonagem, origens, getId }
   };
 
   const itensFiltrados = busca.trim()
-    ? categoriasItens.map(cat => ({
-        ...cat,
-        itens: cat.itens.filter(i => i.nome.toLowerCase().includes(busca.toLowerCase()))
-      })).filter(cat => cat.itens.length > 0)
+    ? categoriasItens.map(cat => ({ ...cat, itens: cat.itens.filter(i => i.nome.toLowerCase().includes(busca.toLowerCase())) })).filter(cat => cat.itens.length > 0)
     : categoriasItens;
 
   const pesoTotal = itens.reduce((acc: number, item: PersonagemItem) => acc + (item.peso * item.quantidade), 0);
-  const valorTotal = itens.reduce((acc: number, item: PersonagemItem) => acc + (item.valor * item.quantidade), 0);
+
+  // Opcoes de armadura baseadas em proficiencia
+  const armadurasDisponiveis = isArcanista ? [] : [
+    ...armaduras.filter(a => a.subtipo === 'leve' && ['Armadura de couro', 'Couro batido', 'Gibão de peles'].includes(a.nome)),
+    ...(classe?.prof_armaduras_pesadas ? armaduras.filter(a => a.nome === 'Brunea') : []),
+  ];
 
   return (
     <div className="space-y-6">
       <h2 className="text-xl font-bold text-gray-800">Inventario e Extras</h2>
 
+      {/* Selecao de equipamento inicial (nivel 1) */}
+      {personagem.nivel === 1 && classe && (
+        <div className="p-4 bg-amber-50 rounded-lg border border-amber-200 space-y-3">
+          <h3 className="text-sm font-semibold text-amber-800">Equipamento Inicial (Nivel 1)</h3>
+          <p className="text-xs text-amber-700">Escolha suas armas e armadura iniciais. Itens basicos e da origem ja foram adicionados automaticamente.</p>
+
+          {/* Arma simples */}
+          <div>
+            <label className="text-xs font-medium text-gray-700">Arma simples (escolha uma)</label>
+            <div className="flex gap-2 mt-1">
+              <select value={armaSimplesSelecionada} onChange={(e) => setArmaSimplesSelecionada(e.target.value)} className="flex-1 p-2 border border-gray-300 rounded text-sm text-gray-800">
+                <option value="">Selecione...</option>
+                {armasSimples.map(a => <option key={a.nome} value={a.nome}>{a.nome} ({a.dano})</option>)}
+              </select>
+              <button onClick={() => { adicionarEscolhaInicial(armaSimplesSelecionada, armasSimples); setArmaSimplesSelecionada(''); }} disabled={!armaSimplesSelecionada} className="px-3 py-2 bg-amber-600 text-white rounded text-sm disabled:bg-gray-300">+</button>
+            </div>
+          </div>
+
+          {/* Arma marcial (se proficiente) */}
+          {classe.prof_armas_marciais && (
+            <div>
+              <label className="text-xs font-medium text-gray-700">Arma marcial (proficiente - escolha uma)</label>
+              <div className="flex gap-2 mt-1">
+                <select value={armaMarcialSelecionada} onChange={(e) => setArmaMarcialSelecionada(e.target.value)} className="flex-1 p-2 border border-gray-300 rounded text-sm text-gray-800">
+                  <option value="">Selecione...</option>
+                  {armasMarciais.map(a => <option key={a.nome} value={a.nome}>{a.nome} ({a.dano})</option>)}
+                </select>
+                <button onClick={() => { adicionarEscolhaInicial(armaMarcialSelecionada, armasMarciais); setArmaMarcialSelecionada(''); }} disabled={!armaMarcialSelecionada} className="px-3 py-2 bg-amber-600 text-white rounded text-sm disabled:bg-gray-300">+</button>
+              </div>
+            </div>
+          )}
+
+          {/* Armadura (exceto arcanista) */}
+          {!isArcanista && armadurasDisponiveis.length > 0 && (
+            <div>
+              <label className="text-xs font-medium text-gray-700">
+                Armadura (escolha uma{classe.prof_armaduras_pesadas ? ' - inclui brunea' : ''})
+              </label>
+              <div className="flex gap-2 mt-1">
+                <select value={armaduraSelecionada} onChange={(e) => setArmaduraSelecionada(e.target.value)} className="flex-1 p-2 border border-gray-300 rounded text-sm text-gray-800">
+                  <option value="">Selecione...</option>
+                  {armadurasDisponiveis.map(a => <option key={a.nome} value={a.nome}>{a.nome} (Def +{a.bonusDefesa})</option>)}
+                </select>
+                <button onClick={() => { adicionarEscolhaInicial(armaduraSelecionada, armaduras); setArmaduraSelecionada(''); }} disabled={!armaduraSelecionada} className="px-3 py-2 bg-amber-600 text-white rounded text-sm disabled:bg-gray-300">+</button>
+              </div>
+            </div>
+          )}
+
+          {/* Escudo leve (se proficiente) */}
+          {classe.prof_escudos && (
+            <p className="text-xs text-amber-700">
+              Proficiente em escudos: escudo leve adicionado automaticamente.
+            </p>
+          )}
+        </div>
+      )}
+
       {/* Dinheiro */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Dinheiro (T$)</label>
-        <input
-          type="number"
-          min={0}
-          step={0.01}
-          value={personagem.dinheiro || 0}
+        <label className="block text-sm font-medium text-gray-700 mb-1">Dinheiro (T$) {personagem.nivel === 1 && <span className="text-xs text-gray-500">- Role 4d6 para o valor inicial</span>}</label>
+        <input type="number" min={0} step={0.01} value={personagem.dinheiro || 0}
           onChange={(e) => setPersonagem((prev: any) => ({ ...prev, dinheiro: parseFloat(e.target.value) || 0 }))}
-          className="w-full p-3 border border-gray-300 rounded-lg text-gray-800"
-        />
+          className="w-full p-3 border border-gray-300 rounded-lg text-gray-800" />
       </div>
 
       {/* Inventario atual */}
       <div>
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Inventario</h3>
-          <div className="text-xs text-gray-500">
-            {itens.length} itens | {pesoTotal} espacos | T$ {valorTotal.toFixed(2)} valor
-          </div>
+          <div className="text-xs text-gray-500">{itens.length} itens | {pesoTotal} espacos</div>
         </div>
 
         {itens.length > 0 ? (
@@ -121,96 +186,54 @@ export default function StepExtras({ personagem, setPersonagem, origens, getId }
               <div key={i} className="flex items-center gap-2 p-2 bg-gray-50 rounded border text-sm">
                 <span className="flex-1 text-gray-800 font-medium">{item.nome}</span>
                 <span className="text-gray-500 text-xs">x{item.quantidade}</span>
-                {item.peso > 0 && <span className="text-gray-400 text-xs">{item.peso * item.quantidade} esp</span>}
-                {item.valor > 0 && <span className="text-yellow-600 text-xs">T${item.valor}</span>}
                 {item.descricao && <span className="text-gray-400 text-xs hidden sm:inline">{item.descricao}</span>}
                 <button onClick={() => removerItem(i)} className="text-red-400 hover:text-red-600 text-xs px-1 font-bold">X</button>
               </div>
             ))}
           </div>
         ) : (
-          <p className="text-gray-400 text-sm mb-4">Nenhum item adicionado. Escolha abaixo.</p>
+          <p className="text-gray-400 text-sm mb-4">Nenhum item adicionado.</p>
         )}
       </div>
 
-      {/* Catalogo de itens T20 */}
+      {/* Catalogo */}
       <div>
         <div className="flex items-center gap-2 mb-3">
           <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Catalogo T20</h3>
-          <button
-            onClick={() => setModoManual(!modoManual)}
-            className="text-xs text-red-600 hover:text-red-800 underline ml-auto"
-          >
+          <button onClick={() => setModoManual(!modoManual)} className="text-xs text-red-600 hover:text-red-800 underline ml-auto">
             {modoManual ? 'Voltar ao catalogo' : 'Adicionar item manual'}
           </button>
         </div>
 
         {modoManual ? (
           <div className="grid grid-cols-12 gap-2 p-3 bg-gray-50 rounded-lg border">
-            <input
-              type="text" placeholder="Nome do item" value={novoItem.nome}
-              onChange={(e) => setNovoItem(prev => ({ ...prev, nome: e.target.value }))}
-              className="col-span-5 p-2 border border-gray-300 rounded text-sm text-gray-800"
-            />
-            <select
-              value={novoItem.tipo}
-              onChange={(e) => setNovoItem(prev => ({ ...prev, tipo: e.target.value }))}
-              className="col-span-2 p-2 border border-gray-300 rounded text-sm text-gray-800"
-            >
-              <option value="item">Item</option>
-              <option value="arma">Arma</option>
-              <option value="armadura">Armadura</option>
-              <option value="consumivel">Consumivel</option>
+            <input type="text" placeholder="Nome do item" value={novoItem.nome} onChange={(e) => setNovoItem(prev => ({ ...prev, nome: e.target.value }))} className="col-span-5 p-2 border border-gray-300 rounded text-sm text-gray-800" />
+            <select value={novoItem.tipo} onChange={(e) => setNovoItem(prev => ({ ...prev, tipo: e.target.value }))} className="col-span-2 p-2 border border-gray-300 rounded text-sm text-gray-800">
+              <option value="item">Item</option><option value="arma">Arma</option><option value="armadura">Armadura</option><option value="consumivel">Consumivel</option>
             </select>
-            <input
-              type="number" min={1} placeholder="Qtd" value={novoItem.quantidade}
-              onChange={(e) => setNovoItem(prev => ({ ...prev, quantidade: parseInt(e.target.value) || 1 }))}
-              className="col-span-1 p-2 border border-gray-300 rounded text-sm text-gray-800"
-            />
-            <input
-              type="number" min={0} step={0.1} placeholder="Peso" value={novoItem.peso || ''}
-              onChange={(e) => setNovoItem(prev => ({ ...prev, peso: parseFloat(e.target.value) || 0 }))}
-              className="col-span-2 p-2 border border-gray-300 rounded text-sm text-gray-800"
-            />
-            <button
-              onClick={adicionarItemManual} disabled={!novoItem.nome.trim()}
-              className="col-span-2 p-2 bg-red-700 text-white rounded text-sm hover:bg-red-800 disabled:bg-gray-300"
-            >
-              Adicionar
-            </button>
+            <input type="number" min={1} placeholder="Qtd" value={novoItem.quantidade} onChange={(e) => setNovoItem(prev => ({ ...prev, quantidade: parseInt(e.target.value) || 1 }))} className="col-span-1 p-2 border border-gray-300 rounded text-sm text-gray-800" />
+            <input type="number" min={0} step={0.1} placeholder="Peso" value={novoItem.peso || ''} onChange={(e) => setNovoItem(prev => ({ ...prev, peso: parseFloat(e.target.value) || 0 }))} className="col-span-2 p-2 border border-gray-300 rounded text-sm text-gray-800" />
+            <button onClick={adicionarItemManual} disabled={!novoItem.nome.trim()} className="col-span-2 p-2 bg-red-700 text-white rounded text-sm hover:bg-red-800 disabled:bg-gray-300">Adicionar</button>
           </div>
         ) : (
           <>
-            <input
-              type="text" placeholder="Buscar item..." value={busca}
-              onChange={(e) => setBusca(e.target.value)}
-              className="w-full p-2.5 border border-gray-300 rounded-lg text-sm text-gray-800 mb-3"
-            />
-
+            <input type="text" placeholder="Buscar item..." value={busca} onChange={(e) => setBusca(e.target.value)} className="w-full p-2.5 border border-gray-300 rounded-lg text-sm text-gray-800 mb-3" />
             <div className="space-y-1 max-h-[400px] overflow-y-auto">
               {itensFiltrados.map(cat => (
                 <div key={cat.key}>
-                  <button
-                    onClick={() => setCategoriaAberta(categoriaAberta === cat.key ? null : cat.key)}
-                    className="w-full flex items-center justify-between p-2.5 bg-gray-100 hover:bg-gray-200 rounded text-sm font-medium text-gray-700 transition-colors"
-                  >
+                  <button onClick={() => setCategoriaAberta(categoriaAberta === cat.key ? null : cat.key)} className="w-full flex items-center justify-between p-2.5 bg-gray-100 hover:bg-gray-200 rounded text-sm font-medium text-gray-700 transition-colors">
                     <span>{cat.label} ({cat.itens.length})</span>
                     <span className="text-gray-400">{categoriaAberta === cat.key ? '\u25B2' : '\u25BC'}</span>
                   </button>
                   {(categoriaAberta === cat.key || busca.trim()) && (
                     <div className="pl-2 py-1 space-y-0.5">
                       {cat.itens.map((item, i) => (
-                        <button
-                          key={i}
-                          onClick={() => adicionarItemPreDefinido(item)}
-                          className="w-full flex items-center gap-2 p-2 hover:bg-red-50 rounded text-left text-sm transition-colors group"
-                        >
+                        <button key={i} onClick={() => adicionarItemPreDefinido(item)} className="w-full flex items-center gap-2 p-2 hover:bg-red-50 rounded text-left text-sm transition-colors group">
                           <span className="text-green-600 font-bold text-xs opacity-0 group-hover:opacity-100">+</span>
                           <span className="flex-1 text-gray-800">{item.nome}</span>
                           {item.dano && <span className="text-red-600 text-xs">{item.dano}</span>}
                           {item.bonusDefesa && <span className="text-blue-600 text-xs">+{item.bonusDefesa} Def</span>}
                           <span className="text-yellow-600 text-xs">T${item.preco}</span>
-                          <span className="text-gray-400 text-xs">{item.peso} esp</span>
                         </button>
                       ))}
                     </div>
@@ -225,23 +248,13 @@ export default function StepExtras({ personagem, setPersonagem, origens, getId }
       {/* Anotacoes */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">Anotacoes</label>
-        <textarea
-          rows={3} value={personagem.anotacoes || ''}
-          onChange={(e) => setPersonagem((prev: any) => ({ ...prev, anotacoes: e.target.value }))}
-          placeholder="Anotacoes gerais sobre seu personagem..."
-          className="w-full p-3 border border-gray-300 rounded-lg text-gray-800 text-sm"
-        />
+        <textarea rows={3} value={personagem.anotacoes || ''} onChange={(e) => setPersonagem((prev: any) => ({ ...prev, anotacoes: e.target.value }))} placeholder="Anotacoes gerais..." className="w-full p-3 border border-gray-300 rounded-lg text-gray-800 text-sm" />
       </div>
 
       {/* Historico */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">Historico / Background</label>
-        <textarea
-          rows={3} value={personagem.historico || ''}
-          onChange={(e) => setPersonagem((prev: any) => ({ ...prev, historico: e.target.value }))}
-          placeholder="Conte a historia do seu personagem..."
-          className="w-full p-3 border border-gray-300 rounded-lg text-gray-800 text-sm"
-        />
+        <textarea rows={3} value={personagem.historico || ''} onChange={(e) => setPersonagem((prev: any) => ({ ...prev, historico: e.target.value }))} placeholder="Conte a historia do seu personagem..." className="w-full p-3 border border-gray-300 rounded-lg text-gray-800 text-sm" />
       </div>
     </div>
   );

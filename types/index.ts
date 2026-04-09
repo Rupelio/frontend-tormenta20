@@ -60,6 +60,21 @@ export interface Classe {
   pmprimeironivelc?: number;
   pmpornivel: number;
   atributoprincipal: string;
+  pericias_quantidade?: number;
+  prof_armas_simples?: boolean;
+  prof_armas_marciais?: boolean;
+  prof_armaduras_leves?: boolean;
+  prof_armaduras_pesadas?: boolean;
+  prof_escudos?: boolean;
+}
+
+export interface OrigemItem {
+  id?: number;
+  origem_id?: number;
+  nome: string;
+  tipo: string;
+  quantidade: number;
+  descricao?: string;
 }
 
 export interface PersonagemItem {
@@ -78,6 +93,7 @@ export interface Origem {
   ID?: number;
   nome: string;
   descricao: string;
+  itens?: OrigemItem[];
 }
 
 export interface Personagem {

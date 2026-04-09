@@ -294,6 +294,10 @@ export default function WizardContainer({ editId }: WizardContainerProps) {
           poderes_divinos: poderesDivinosSelecionados,
           beneficios_origem_pericias: beneficiosOrigem.pericias,
           beneficios_origem_poderes: beneficiosOrigem.poderes,
+          dinheiro: personagem.dinheiro || 0,
+          anotacoes: personagem.anotacoes || '',
+          historico: personagem.historico || '',
+          itens: personagem.itens || [],
         };
 
         let result;
