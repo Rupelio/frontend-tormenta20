@@ -138,13 +138,13 @@ const PointBuyCalculator: React.FC<PointBuyCalculatorProps> = ({
           )}
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
-          <button type="button" onClick={() => updateAttribute(name, -1)} disabled={valorBase <= -1} className="w-8 h-8 flex items-center justify-center bg-red-500 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-red-600 flex-shrink-0" style={{ fontSize: 'clamp(0.75rem, 2vw, 0.875rem)' }}>
+          <button type="button" onClick={(e) => { e.preventDefault(); updateAttribute(name, -1); }} disabled={valorBase <= -1} className="w-8 h-8 flex items-center justify-center bg-red-500 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-red-600 flex-shrink-0" style={{ fontSize: 'clamp(0.75rem, 2vw, 0.875rem)' }}>
             -
           </button>
           <span className="w-8 text-center font-bold flex-shrink-0" style={{ fontSize: 'clamp(0.875rem, 2.5vw, 1rem)' }}>
             {valorBase}
           </span>
-          <button type="button" onClick={() => updateAttribute(name, 1)} disabled={valorBase >= 4 || (remainingPoints - (getCostForValue(valorBase + 1) - getCostForValue(valorBase)) < 0)} className="w-8 h-8 flex items-center justify-center bg-green-500 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-green-600 flex-shrink-0" style={{ fontSize: 'clamp(0.75rem, 2vw, 0.875rem)' }}>
+          <button type="button" onClick={(e) => { e.preventDefault(); updateAttribute(name, 1); }} disabled={valorBase >= 4 || (remainingPoints - (getCostForValue(valorBase + 1) - getCostForValue(valorBase)) < 0)} className="w-8 h-8 flex items-center justify-center bg-green-500 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-green-600 flex-shrink-0" style={{ fontSize: 'clamp(0.75rem, 2vw, 0.875rem)' }}>
             +
           </button>
           <span className="text-gray-600 whitespace-nowrap flex-shrink-0 ml-1" style={{ fontSize: 'clamp(0.625rem, 1.8vw, 0.8rem)' }}>

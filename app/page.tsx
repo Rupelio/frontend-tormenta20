@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { api } from '@/lib/api';
 import { Personagem, Stats } from '@/types';
 import { TrashIcon } from '@heroicons/react/24/outline';
-import ExportadorPDF from '@/components/ExportadorPDF';
+import { exportarPDF } from '@/lib/pdfExporter';
 
 const calculateStats = (char: Partial<Personagem>): Stats => {
   // char.con e char.des vindos da API ja sao valores FINAIS (base + racial)
@@ -42,7 +42,27 @@ export default function Home() {
   const [personagens, setPersonagens] = useState<Personagem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [pdfPersonagem, setPdfPersonagem] = useState<Personagem | null>(null);
+  const [exportingPdf, setExportingPdf] = useState<number | null>(null);
+
+  const handleExportPDF = async (personagem: Personagem) => {
+    setExportingPdf(personagem.id || null);
+    try {
+      const blob = await exportarPDF(personagem);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${personagem.nome || 'personagem'}-ficha-t20.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Erro ao exportar PDF:', err);
+      alert('Erro ao gerar PDF. Tente novamente.');
+    } finally {
+      setExportingPdf(null);
+    }
+  };
 
   useEffect(() => {
     const carregarPersonagens = async () => {
@@ -216,10 +236,11 @@ export default function Home() {
                       Editar
                     </Link>
                     <button
-                      onClick={() => setPdfPersonagem(personagem)}
-                      className="flex-1 text-center py-2.5 text-sm font-medium text-red-700 hover:bg-red-50 transition-colors"
+                      onClick={() => handleExportPDF(personagem)}
+                      disabled={exportingPdf === personagem.id}
+                      className="flex-1 text-center py-2.5 text-sm font-medium text-red-700 hover:bg-red-50 transition-colors disabled:opacity-50"
                     >
-                      Exportar PDF
+                      {exportingPdf === personagem.id ? 'Gerando...' : 'Exportar PDF'}
                     </button>
                   </div>
                 </div>
@@ -229,25 +250,6 @@ export default function Home() {
         )}
       </main>
 
-      {/* Modal de exportacao PDF */}
-      {pdfPersonagem && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="max-w-lg w-full max-h-[90vh] overflow-y-auto">
-            <div className="relative">
-              <button
-                onClick={() => setPdfPersonagem(null)}
-                className="absolute -top-3 -right-3 w-8 h-8 bg-white rounded-full shadow-md flex items-center justify-center text-gray-600 hover:text-gray-900 z-10"
-              >
-                X
-              </button>
-              <ExportadorPDF
-                personagem={pdfPersonagem}
-                onExport={() => setPdfPersonagem(null)}
-              />
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

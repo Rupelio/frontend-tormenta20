@@ -1,40 +1,39 @@
 import React, { useState, useEffect } from 'react';
-import { Personagem, Stats } from '@/types';
+import { Personagem, Classe, Stats } from '@/types';
 
 export const StatsCalculator: React.FC<{
   personagem: Partial<Personagem>;
+  classeEscolhida?: Classe | null;
   racaSelecionada?: any;
   atributosLivresEscolhidos?: string[];
-}> = ({ personagem, racaSelecionada }) => {
+}> = ({ personagem, classeEscolhida, racaSelecionada }) => {
   const [statsCalculados, setStatsCalculados] = useState<Stats>({
     pv_total: 0,
     pm_total: 0,
     defesa: 10
   });
 
-  const calculateStats = (char: Partial<Personagem>): Stats => {
-    // personagem.con e personagem.des JA sao valores FINAIS (base + racial)
-    // calculados pelo useEffect no PersonagemForm. NAO adicionar racial novamente.
+  const calculateStats = (char: Partial<Personagem>, classe?: Classe | null): Stats => {
     const modConFinal = char.con || 0;
     const modDesFinal = char.des || 0;
 
-    // T20: 1o nivel = pvPrimeiroNivel + CON, niveis 2+ = pvPorNivel + CON
-    const pvPrimeiroNivel = char.classe?.pvprimeironivelc || char.classe?.pvpornivel || 0;
-    const pvPorNivel = char.classe?.pvpornivel || 0;
+    // Usar classe passada diretamente ou do personagem
+    const cl = classe || char.classe;
+
+    const pvPrimeiroNivel = cl?.pvprimeironivelc || cl?.pvpornivel || 0;
+    const pvPorNivel = cl?.pvpornivel || 0;
     let pvTotal = pvPrimeiroNivel + modConFinal;
     if ((char.nivel || 1) > 1) {
       pvTotal += (pvPorNivel + modConFinal) * ((char.nivel || 1) - 1);
     }
 
-    // PM: pmPrimeiroNivel + pmPorNivel * (nivel - 1)
-    const pmPrimeiroNivel = char.classe?.pmprimeironivelc || char.classe?.pmpornivel || 0;
-    const pmPorNivel = char.classe?.pmpornivel || 0;
+    const pmPrimeiroNivel = cl?.pmprimeironivelc || cl?.pmpornivel || 0;
+    const pmPorNivel = cl?.pmpornivel || 0;
     let pmTotal = pmPrimeiroNivel;
     if ((char.nivel || 1) > 1) {
       pmTotal += pmPorNivel * ((char.nivel || 1) - 1);
     }
 
-    // Defesa = 10 + mod DES
     const defesa = 10 + modDesFinal;
 
     return {
@@ -45,11 +44,9 @@ export const StatsCalculator: React.FC<{
   };
 
   useEffect(() => {
-    if (personagem.nivel && personagem.con !== undefined && personagem.des !== undefined) {
-      const stats = calculateStats(personagem);
-      setStatsCalculados(stats);
-    }
-  }, [personagem, racaSelecionada]);
+    const stats = calculateStats(personagem, classeEscolhida);
+    setStatsCalculados(stats);
+  }, [personagem, classeEscolhida, racaSelecionada]);
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">

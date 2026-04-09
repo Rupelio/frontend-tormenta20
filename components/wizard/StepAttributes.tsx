@@ -3,7 +3,7 @@ import React from "react";
 import PointBuyCalculator from "../PointBuyCalculator";
 import { StatsCalculator } from "../StatsCalculator";
 
-export default function StepAttributes({ personagem, baseAtributos, setBaseAtributos, racaSelecionada, atributosLivresEscolhidos, setAtributosLivresEscolhidos, temAtributosLivres, calculateTotalPV, calculateTotalPM }: any) {
+export default function StepAttributes({ personagem, baseAtributos, setBaseAtributos, racaSelecionada, classeEscolhida, atributosLivresEscolhidos, setAtributosLivresEscolhidos, temAtributosLivres }: any) {
   return (
     <div className="space-y-6">
       <h2 className="text-xl font-bold text-gray-800">Distribua seus Atributos</h2>
@@ -18,6 +18,7 @@ export default function StepAttributes({ personagem, baseAtributos, setBaseAtrib
 
       <StatsCalculator
         personagem={personagem}
+        classeEscolhida={classeEscolhida}
         racaSelecionada={racaSelecionada}
         atributosLivresEscolhidos={atributosLivresEscolhidos}
       />
