@@ -157,6 +157,128 @@ export const alquimicos: ItemPreDefinido[] = [
   { nome: 'Po do desaparecimento', tipo: 'alquimico', subtipo: 'preparado', preco: 100, peso: 0.5 },
 ];
 
+// ========== VESTUARIO ==========
+export const vestuario: ItemPreDefinido[] = [
+  { nome: 'Andrajos de aldeao', tipo: 'vestuario', preco: 1, peso: 1 },
+  { nome: 'Bandana', tipo: 'vestuario', preco: 5, peso: 1 },
+  { nome: 'Botas reforcadas', tipo: 'vestuario', preco: 20, peso: 1 },
+  { nome: 'Camisa bufante', tipo: 'vestuario', preco: 25, peso: 1 },
+  { nome: 'Capa esvoacante', tipo: 'vestuario', preco: 25, peso: 1 },
+  { nome: 'Capa pesada', tipo: 'vestuario', preco: 15, peso: 1 },
+  { nome: 'Casaco longo', tipo: 'vestuario', preco: 20, peso: 1 },
+  { nome: 'Chapeu arcano', tipo: 'vestuario', preco: 50, peso: 1 },
+  { nome: 'Enfeite de elmo', tipo: 'vestuario', preco: 15, peso: 1 },
+  { nome: 'Farrapos de ermitao', tipo: 'vestuario', preco: 1, peso: 1 },
+  { nome: 'Gorro de ervas', tipo: 'vestuario', preco: 75, peso: 1 },
+  { nome: 'Luva de pelica', tipo: 'vestuario', preco: 5, peso: 1 },
+  { nome: 'Manopla', tipo: 'vestuario', preco: 10, peso: 1 },
+  { nome: 'Manto camuflado', tipo: 'vestuario', preco: 12, peso: 1 },
+  { nome: 'Manto eclesiastico', tipo: 'vestuario', preco: 20, peso: 1 },
+  { nome: 'Robe mistico', tipo: 'vestuario', preco: 50, peso: 1 },
+  { nome: 'Sapatos de camurca', tipo: 'vestuario', preco: 8, peso: 1 },
+  { nome: 'Tabardo', tipo: 'vestuario', preco: 10, peso: 1 },
+  { nome: 'Traje da corte', tipo: 'vestuario', preco: 100, peso: 1 },
+  { nome: 'Traje de viajante', tipo: 'vestuario', preco: 10, peso: 0 },
+  { nome: 'Veste de seda', tipo: 'vestuario', preco: 25, peso: 1 },
+];
+
+// ========== ESOTERICOS ==========
+export const esotericos: ItemPreDefinido[] = [
+  { nome: 'Bolsa de po', tipo: 'esoterico', preco: 300, peso: 1 },
+  { nome: 'Cajado arcano', tipo: 'esoterico', preco: 1000, peso: 2 },
+  { nome: 'Cetro elemental', tipo: 'esoterico', preco: 750, peso: 1 },
+  { nome: 'Costela de lich', tipo: 'esoterico', preco: 300, peso: 1 },
+  { nome: 'Dedo de ente', tipo: 'esoterico', preco: 200, peso: 1 },
+  { nome: 'Luva de ferro', tipo: 'esoterico', preco: 150, peso: 1 },
+  { nome: 'Medalhao de prata', tipo: 'esoterico', preco: 750, peso: 1 },
+  { nome: 'Orbe cristalino', tipo: 'esoterico', preco: 750, peso: 1 },
+  { nome: 'Tomo hermetico', tipo: 'esoterico', preco: 1500, peso: 1 },
+  { nome: 'Varinha arcana', tipo: 'esoterico', preco: 100, peso: 1 },
+];
+
+// ========== CATALISADORES ==========
+export const catalisadores: ItemPreDefinido[] = [
+  { nome: 'Baga-de-fogo', tipo: 'alquimico', subtipo: 'catalisador', preco: 30, peso: 0.5 },
+  { nome: 'Dente-de-dragao', tipo: 'alquimico', subtipo: 'catalisador', preco: 45, peso: 0.5 },
+  { nome: 'Essencia abissal', tipo: 'alquimico', subtipo: 'catalisador', preco: 150, peso: 0.5 },
+  { nome: 'Liquen lilas', tipo: 'alquimico', subtipo: 'catalisador', preco: 30, peso: 0.5 },
+  { nome: 'Musgo purpura', tipo: 'alquimico', subtipo: 'catalisador', preco: 45, peso: 0.5 },
+  { nome: 'Ossos de monstro', tipo: 'alquimico', subtipo: 'catalisador', preco: 45, peso: 0.5 },
+  { nome: 'Po de cristal', tipo: 'alquimico', subtipo: 'catalisador', preco: 30, peso: 0.5 },
+  { nome: 'Po de giz', tipo: 'alquimico', subtipo: 'catalisador', preco: 30, peso: 0.5 },
+  { nome: 'Ramo verdejante', tipo: 'alquimico', subtipo: 'catalisador', preco: 45, peso: 0.5 },
+  { nome: 'Saco de sal', tipo: 'alquimico', subtipo: 'catalisador', preco: 45, peso: 0.5 },
+  { nome: 'Seixo de ambar', tipo: 'alquimico', subtipo: 'catalisador', preco: 30, peso: 0.5 },
+  { nome: 'Terra de cemiterio', tipo: 'alquimico', subtipo: 'catalisador', preco: 30, peso: 0.5 },
+];
+
+// ========== VENENOS ==========
+export const venenos: ItemPreDefinido[] = [
+  { nome: 'Beladona', tipo: 'alquimico', subtipo: 'veneno', preco: 1500, peso: 0.5 },
+  { nome: 'Bruma sonolenta', tipo: 'alquimico', subtipo: 'veneno', preco: 150, peso: 0.5 },
+  { nome: 'Cicuta', tipo: 'alquimico', subtipo: 'veneno', preco: 60, peso: 0.5 },
+  { nome: 'Essencia de sombra', tipo: 'alquimico', subtipo: 'veneno', preco: 100, peso: 0.5 },
+  { nome: 'Nevoa toxica', tipo: 'alquimico', subtipo: 'veneno', preco: 30, peso: 0.5 },
+  { nome: 'Peconha comum', tipo: 'alquimico', subtipo: 'veneno', preco: 15, peso: 0.5 },
+  { nome: 'Peconha concentrada', tipo: 'alquimico', subtipo: 'veneno', preco: 90, peso: 0.5 },
+  { nome: 'Peconha potente', tipo: 'alquimico', subtipo: 'veneno', preco: 600, peso: 0.5 },
+  { nome: 'Po de lich', tipo: 'alquimico', subtipo: 'veneno', preco: 3000, peso: 0.5 },
+  { nome: 'Riso de Nimb', tipo: 'alquimico', subtipo: 'veneno', preco: 150, peso: 0.5 },
+];
+
+// ========== ANIMAIS E VEICULOS ==========
+export const animaisVeiculos: ItemPreDefinido[] = [
+  { nome: 'Alforje', tipo: 'animal', preco: 30, peso: 0 },
+  { nome: 'Cao de caca', tipo: 'animal', preco: 150, peso: 0 },
+  { nome: 'Cavalo', tipo: 'animal', preco: 75, peso: 0 },
+  { nome: 'Cavalo de guerra', tipo: 'animal', preco: 400, peso: 0 },
+  { nome: 'Ponei', tipo: 'animal', preco: 5, peso: 0 },
+  { nome: 'Ponei de guerra', tipo: 'animal', preco: 30, peso: 0 },
+  { nome: 'Trobo', tipo: 'animal', preco: 60, peso: 0 },
+  { nome: 'Carroca', tipo: 'veiculo', preco: 150, peso: 0 },
+  { nome: 'Carruagem', tipo: 'veiculo', preco: 500, peso: 0 },
+  { nome: 'Canoa', tipo: 'veiculo', preco: 70, peso: 0 },
+  { nome: 'Balao goblin', tipo: 'veiculo', preco: 200, peso: 0 },
+];
+
+// ========== ITENS INICIAIS POR ORIGEM ==========
+export const itensIniciaisPorOrigem: Record<string, string[]> = {
+  'Acolito': ['Simbolo sagrado', 'Traje de viajante'],
+  'Amigo dos Animais': ['Cao de caca ou Cavalo ou Ponei ou Trobo'],
+  'Aristocrata': ['Traje da corte'],
+  'Artesao': ['Instrumentos de oficio'],
+  'Artista': ['Estojo de disfarces ou Instrumento musical'],
+  'Assistente de Laboratorio': ['Instrumentos de oficio'],
+  'Batedor': ['Barraca', 'Equipamento de viagem'],
+  'Capanga': ['Adaga ou Clava'],
+  'Charlatao': ['Estojo de disfarces'],
+  'Circense': ['Instrumento musical'],
+  'Criminoso': ['Estojo de disfarces ou Gazua'],
+  'Curandeiro': ['Balsamo restaurador', 'Balsamo restaurador', 'Maleta de medicamentos'],
+  'Eremita': ['Barraca', 'Equipamento de viagem'],
+  'Escravo': ['Algemas'],
+  'Estudioso': ['Colecao de livros'],
+  'Fazendeiro': ['Carroca', 'Lanca'],
+  'Forasteiro': ['Equipamento de viagem', 'Instrumento musical'],
+  'Gladiador': ['Espada longa ou Machado de batalha'],
+  'Guarda': ['Espada longa ou Lanca'],
+  'Herdeiro': [],
+  'Heroi Campones': ['Instrumentos de oficio ou Lanca'],
+  'Marujo': ['Corda (10m)'],
+  'Mateiro': ['Arco curto', 'Barraca', 'Equipamento de viagem', 'Flechas (20)'],
+  'Membro de Guilda': ['Gazua ou Instrumentos de oficio'],
+  'Mercador': ['Carroca', 'Trobo'],
+  'Minerador': ['Picareta'],
+  'Nomade': ['Bordao', 'Equipamento de viagem'],
+  'Pivete': ['Gazua'],
+  'Refugiado': [],
+  'Seguidor': [],
+  'Selvagem': ['Lanca ou Bordao'],
+  'Soldado': ['Espada longa ou Arco curto'],
+  'Taverneiro': ['Clava'],
+  'Trabalhador': ['Maca ou Lanca'],
+};
+
 // ========== TODOS OS ITENS AGRUPADOS ==========
 export const todosOsItens: ItemPreDefinido[] = [
   ...armasSimples,
@@ -167,18 +289,28 @@ export const todosOsItens: ItemPreDefinido[] = [
   ...escudos,
   ...equipamentoAventura,
   ...ferramentas,
+  ...vestuario,
+  ...esotericos,
   ...alquimicos,
+  ...catalisadores,
+  ...venenos,
+  ...animaisVeiculos,
 ];
 
 // Categorias para o seletor
 export const categoriasItens = [
   { key: 'armas-simples', label: 'Armas Simples', itens: armasSimples },
   { key: 'armas-marciais', label: 'Armas Marciais', itens: armasMarciais },
-  { key: 'armas-exoticas', label: 'Armas Exoticas', itens: armasExoticas },
+  { key: 'armas-exoticas', label: 'Armas Exoticas e de Fogo', itens: armasExoticas },
   { key: 'municoes', label: 'Municoes', itens: municoes },
   { key: 'armaduras', label: 'Armaduras', itens: armaduras },
   { key: 'escudos', label: 'Escudos', itens: escudos },
   { key: 'equipamento', label: 'Equipamento de Aventura', itens: equipamentoAventura },
   { key: 'ferramentas', label: 'Ferramentas', itens: ferramentas },
-  { key: 'alquimicos', label: 'Alquimicos', itens: alquimicos },
+  { key: 'vestuario', label: 'Vestuario', itens: vestuario },
+  { key: 'esotericos', label: 'Esotericos', itens: esotericos },
+  { key: 'alquimicos', label: 'Alquimicos (Preparados)', itens: alquimicos },
+  { key: 'catalisadores', label: 'Catalisadores', itens: catalisadores },
+  { key: 'venenos', label: 'Venenos', itens: venenos },
+  { key: 'animais-veiculos', label: 'Animais e Veiculos', itens: animaisVeiculos },
 ];
