@@ -3,8 +3,7 @@
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import Link from 'next/link';
-import ClientOnly from '@/components/ClientOnly';
-import PersonagemForm from '@/components/PersonagemForm';
+import WizardContainer from '@/components/wizard/WizardContainer';
 
 function CriarPersonagemContent() {
   const searchParams = useSearchParams();
@@ -12,9 +11,8 @@ function CriarPersonagemContent() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header com navegacao */}
       <header className="bg-gradient-to-r from-red-800 to-red-900 text-white py-4 shadow-lg">
-        <div className="max-w-6xl mx-auto px-4 flex items-center gap-4">
+        <div className="max-w-4xl mx-auto px-4 flex items-center gap-4">
           <Link
             href="/"
             className="text-white/80 hover:text-white transition-colors text-sm flex items-center gap-1"
@@ -29,10 +27,8 @@ function CriarPersonagemContent() {
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-4 py-6">
-        <ClientOnly>
-          <PersonagemForm editId={editId} />
-        </ClientOnly>
+      <main className="max-w-4xl mx-auto px-4 py-6">
+        <WizardContainer editId={editId} />
       </main>
     </div>
   );
@@ -45,7 +41,7 @@ export default function CriarPersonagemPage() {
         <div className="min-h-screen bg-gray-50 flex items-center justify-center">
           <div className="text-center">
             <div className="w-10 h-10 border-4 border-red-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-            <p className="text-gray-500">Carregando formulario...</p>
+            <p className="text-gray-500">Carregando...</p>
           </div>
         </div>
       }
