@@ -555,6 +555,11 @@ const periciasDeRacaEscolhidasObjetos = useMemo(() => {
       } catch (e) { console.warn("Não foi possível carregar poderes divinos"); }
 
       try {
+        const poderesClasse = await api.getPersonagemPoderesClasse(id);
+        if (poderesClasse.poderes_ids) setPoderesClasseSelecionados(poderesClasse.poderes_ids);
+      } catch (e) { console.warn("Não foi possível carregar poderes de classe"); }
+
+      try {
         // Supondo que você criou esta nova função na sua API
         const beneficios = await api.getPersonagemBeneficiosOrigem(id);
         if (beneficios && (beneficios.pericias || beneficios.poderes)) {
@@ -791,19 +796,33 @@ const periciasDeRacaEscolhidasObjetos = useMemo(() => {
     const classeEscolhida = classes.find(c => getId(c) === personagem.classe_id);
     if (!classeEscolhida) return 0;
 
-    const basePV = classeEscolhida.pvpornivel || 0;
-    // 'personagem.con' já é o valor final (base + bônus), calculado pelo useEffect.
-    const modConFinal = personagem.con || 0;
+    const pvPrimeiroNivel = classeEscolhida.pvprimeironivelc || classeEscolhida.pvpornivel || 0;
+    const pvPorNivel = classeEscolhida.pvpornivel || 0;
+    // personagem.con ja e valor FINAL (base + racial) via useEffect
+    const modCon = personagem.con || 0;
+    const nivel = personagem.nivel || 1;
 
-    return (basePV + modConFinal) * (personagem.nivel || 1);
+    // T20: 1o nivel = pvPrimeiroNivel + CON, niveis 2+ = pvPorNivel + CON
+    let total = pvPrimeiroNivel + modCon;
+    if (nivel > 1) {
+      total += (pvPorNivel + modCon) * (nivel - 1);
+    }
+    return Math.max(1, total);
   };
 
   const calculateTotalPM = (): number => {
     const classeEscolhida = classes.find(c => getId(c) === personagem.classe_id);
-    const basePM = classeEscolhida?.pmpornivel || 0;
-    const resultado = (basePM) * (personagem.nivel || 1);
+    if (!classeEscolhida) return 0;
 
-    return resultado;
+    const pmPrimeiroNivel = classeEscolhida.pmprimeironivelc || classeEscolhida.pmpornivel || 0;
+    const pmPorNivel = classeEscolhida.pmpornivel || 0;
+    const nivel = personagem.nivel || 1;
+
+    let total = pmPrimeiroNivel;
+    if (nivel > 1) {
+      total += pmPorNivel * (nivel - 1);
+    }
+    return Math.max(0, total);
   };
 
 
@@ -1017,6 +1036,10 @@ const periciasDeRacaEscolhidasObjetos = useMemo(() => {
                   value={personagem.raca_id ? String(personagem.raca_id) : ""}
                   onChange={(e) => {
                     const value = e.target.value ? parseInt(e.target.value) : undefined;
+                    if (value !== personagem.raca_id) {
+                      setEscolhasRaca({});
+                      setAtributosLivresEscolhidos([]);
+                    }
                     setPersonagem(prev => ({ ...prev, raca_id: value }));
                   }}
                   className={`w-full p-3 border rounded-lg text-black ${
@@ -1168,8 +1191,10 @@ const periciasDeRacaEscolhidasObjetos = useMemo(() => {
                     value={personagem.origem_id || ''}
                     onChange={(e) => {
                         const value = e.target.value ? parseInt(e.target.value) : undefined;
+                        if (value !== personagem.origem_id) {
+                            setBeneficiosOrigem({ pericias: [], poderes: [] });
+                        }
                         setPersonagem(prev => ({ ...prev, origem_id: value }));
-                        setBeneficiosOrigem({ pericias: [], poderes: [] }); // Reseta a escolha ao trocar
                     }}
                     className="w-full p-3 border rounded-lg"
                 >

@@ -8,53 +8,26 @@ import { TrashIcon } from '@heroicons/react/24/outline';
 import ExportadorPDF from '@/components/ExportadorPDF';
 
 const calculateStats = (char: Partial<Personagem>): Stats => {
-  const getBonusRacial = (atributo: string): number => {
-    if (!char.raca) return 0;
-    let bonus = 0;
+  // char.con e char.des vindos da API ja sao valores FINAIS (base + racial)
+  // NAO adicionar bonus racial novamente
+  const modConFinal = char.con || 0;
+  const modDesFinal = char.des || 0;
 
-    // Verificar atributos livres
-    const temLivre = char.raca.atributo_bonus_1?.toLowerCase() === 'livre' ||
-                     char.raca.atributo_bonus_2?.toLowerCase() === 'livre';
-
-    if (temLivre) {
-      let atributosLivres: string[] = [];
-      if (char.atributos_livres) {
-        try {
-          atributosLivres = typeof char.atributos_livres === 'string'
-            ? JSON.parse(char.atributos_livres)
-            : char.atributos_livres;
-        } catch { /* vazio */ }
-      }
-      if (atributosLivres.some(a => a.toLowerCase() === atributo.toLowerCase())) {
-        bonus += 1;
-      }
-    } else {
-      if (char.raca.atributo_bonus_1?.toLowerCase() === atributo.toLowerCase()) {
-        bonus += char.raca.valor_bonus_1 || 0;
-      }
-      if (char.raca.atributo_bonus_2?.toLowerCase() === atributo.toLowerCase()) {
-        bonus += char.raca.valor_bonus_2 || 0;
-      }
-    }
-
-    // Penalidade racial usando dados do modelo
-    if (char.raca.atributo_penalidade?.toLowerCase() === atributo.toLowerCase() && char.raca.valor_penalidade) {
-      bonus += char.raca.valor_penalidade;
-    }
-
-    return bonus;
-  };
-
-  const conBase = char.con || 0;
-  const desBase = char.des || 0;
-  const modConFinal = conBase + getBonusRacial('con');
-  const modDesFinal = desBase + getBonusRacial('des');
-
+  // T20: 1o nivel = pvPrimeiroNivel + CON, niveis 2+ = pvPorNivel + CON
+  const pvPrimeiroNivel = char.classe?.pvprimeironivelc || char.classe?.pvpornivel || 0;
   const pvPorNivel = char.classe?.pvpornivel || 0;
-  const pvTotal = (pvPorNivel + modConFinal) * (char.nivel || 1);
+  let pvTotal = pvPrimeiroNivel + modConFinal;
+  if ((char.nivel || 1) > 1) {
+    pvTotal += (pvPorNivel + modConFinal) * ((char.nivel || 1) - 1);
+  }
 
+  // PM: pmPrimeiroNivel + pmPorNivel * (nivel - 1)
+  const pmPrimeiroNivel = char.classe?.pmprimeironivelc || char.classe?.pmpornivel || 0;
   const pmPorNivel = char.classe?.pmpornivel || 0;
-  const pmTotal = pmPorNivel * (char.nivel || 1);
+  let pmTotal = pmPrimeiroNivel;
+  if ((char.nivel || 1) > 1) {
+    pmTotal += pmPorNivel * ((char.nivel || 1) - 1);
+  }
 
   const defesa = 10 + modDesFinal;
 

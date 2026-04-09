@@ -55,9 +55,22 @@ export interface Classe {
   id?: number;
   ID?: number;
   nome: string;
+  pvprimeironivelc?: number;
   pvpornivel: number;
+  pmprimeironivelc?: number;
   pmpornivel: number;
   atributoprincipal: string;
+}
+
+export interface PersonagemItem {
+  id?: number;
+  personagem_id?: number;
+  nome: string;
+  tipo: string;
+  quantidade: number;
+  peso: number;
+  valor: number;
+  descricao: string;
 }
 
 export interface Origem {
@@ -103,6 +116,12 @@ export interface Personagem {
   user_session_id?: string;
   user_ip?: string;
   created_by_type?: 'session' | 'ip' | 'hybrid';
+
+  // Campos extras
+  dinheiro?: number;
+  itens?: PersonagemItem[];
+  anotacoes?: string;
+  historico?: string;
 
   // Stats calculados
   pv_total?: number;
