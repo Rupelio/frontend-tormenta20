@@ -16,14 +16,8 @@ const PERICIA_ATRIBUTO: Record<string, string> = {
 };
 
 // Campos do PDF por pericia:
-// checkbox treinada | total | 1/2 nivel | mod atributo | treino
-interface PericiaFields {
-  checkbox: string;
-  total: string;
-  metadeNivel: string;
-  modAtributo: string;
-  treino: string;
-}
+// total | 1/2 nivel | mod atributo | treino (bonus proficiencia)
+interface PericiaFields { checkbox: string; total: string; metadeNivel: string; modAtributo: string; treino: string; }
 
 const PERICIAS_FIELDS: Record<string, PericiaFields> = {
   'Acrobacia':      { checkbox: 'Mar Trei acro',   total: '010', metadeNivel: '011', modAtributo: '013', treino: '014' },
@@ -65,7 +59,6 @@ export async function exportarPDF(personagem: Personagem): Promise<Blob> {
   const setText = (fieldName: string, value: string) => {
     try { form.getTextField(fieldName).setText(value); } catch {}
   };
-
   const setCheck = (fieldName: string, checked: boolean) => {
     try { if (checked) form.getCheckBox(fieldName).check(); } catch {}
   };
@@ -83,39 +76,60 @@ export async function exportarPDF(personagem: Personagem): Promise<Blob> {
     for: personagem.for || 0, des: personagem.des || 0, con: personagem.con || 0,
     int: personagem.int || 0, sab: personagem.sab || 0, car: personagem.car || 0,
   };
+  setText('For', String(attrs.for)); setText('Des', String(attrs.des)); setText('Con', String(attrs.con));
+  setText('Int', String(attrs.int)); setText('Sab', String(attrs.sab)); setText('Car', String(attrs.car));
+  setText('ModFor', formatMod(attrs.for)); setText('ModDes', formatMod(attrs.des)); setText('ModCon', formatMod(attrs.con));
+  setText('ModInt', formatMod(attrs.int)); setText('ModSab', formatMod(attrs.sab)); setText('ModCar', formatMod(attrs.car));
 
-  setText('For', String(attrs.for));
-  setText('Des', String(attrs.des));
-  setText('Con', String(attrs.con));
-  setText('Int', String(attrs.int));
-  setText('Sab', String(attrs.sab));
-  setText('Car', String(attrs.car));
-
-  setText('ModFor', formatMod(attrs.for));
-  setText('ModDes', formatMod(attrs.des));
-  setText('ModCon', formatMod(attrs.con));
-  setText('ModInt', formatMod(attrs.int));
-  setText('ModSab', formatMod(attrs.sab));
-  setText('ModCar', formatMod(attrs.car));
-
-  // === COMBATE ===
+  // === PV / PM ===
   setText('PVs Totais', String(personagem.pv_total || 0));
   setText('PVs Atuais', String(personagem.pv_total || 0));
   setText('PMs Totais', String(personagem.pm_total || 0));
   setText('PMs Atuais', String(personagem.pm_total || 0));
 
-  // Defesa
+  // === DEFESA ===
+  // Calcular bonus de armadura e escudo a partir dos itens
+  let bonusArmadura = 0;
+  let bonusEscudo = 0;
+  let penArmadura = 0;
+  let penEscudo = 0;
+  for (const item of (personagem.itens || [])) {
+    if (item.tipo === 'armadura' && item.descricao) {
+      const defMatch = item.descricao.match(/Def \+(\d+)/);
+      const penMatch = item.descricao.match(/Penalidade (-?\d+)/);
+      if (defMatch) bonusArmadura = parseInt(defMatch[1]);
+      if (penMatch) penArmadura = parseInt(penMatch[1]);
+    }
+    if (item.tipo === 'escudo' && item.descricao) {
+      const defMatch = item.descricao.match(/Def \+(\d+)/);
+      const penMatch = item.descricao.match(/Penalidade (-?\d+)/);
+      if (defMatch) bonusEscudo = parseInt(defMatch[1]);
+      if (penMatch) penEscudo = parseInt(penMatch[1]);
+    }
+  }
+
   const baseDefesa = 10;
-  const bonusArmadura = 0;
-  const bonusEscudo = 0;
-  const defesaTotal = personagem.defesa || (baseDefesa + attrs.des + bonusArmadura + bonusEscudo);
+  const defesaTotal = baseDefesa + attrs.des + bonusArmadura + bonusEscudo;
   setText('CA', String(defesaTotal));
   setText('Base CA', String(baseDefesa));
-  setText('Armadura', String(bonusArmadura));
-  setText('Escudo', String(bonusEscudo));
+  setText('ModAtribDefe', formatMod(attrs.des));
+  setText('Armadura', bonusArmadura > 0 ? String(bonusArmadura) : '');
+  setText('Escudo', bonusEscudo > 0 ? String(bonusEscudo) : '');
+  setText('Pa', penArmadura ? String(penArmadura) : '');
+  setText('Pe', penEscudo ? String(penEscudo) : '');
+  setText('PArmTotal', (penArmadura + penEscudo) ? String(penArmadura + penEscudo) : '');
   setText('Desloc', personagem.raca?.deslocamento ? `${personagem.raca.deslocamento}m` : '9m');
 
-  // === PERICIAS - cada campo no lugar certo ===
+  // Proficiencias
+  const profs: string[] = [];
+  if (personagem.classe?.prof_armas_simples) profs.push('Armas simples');
+  if (personagem.classe?.prof_armas_marciais) profs.push('Armas marciais');
+  if (personagem.classe?.prof_armaduras_leves) profs.push('Armaduras leves');
+  if (personagem.classe?.prof_armaduras_pesadas) profs.push('Armaduras pesadas');
+  if (personagem.classe?.prof_escudos) profs.push('Escudos');
+  setText('Profici\u00eancias', profs.join(', '));
+
+  // === PERICIAS ===
   const periciasNomes = (personagem.pericias || []).map((p: any) => p.nome || '');
   const nivel = personagem.nivel || 1;
   const metadeNivel = Math.floor(nivel / 2);
@@ -124,20 +138,19 @@ export async function exportarPDF(personagem: Personagem): Promise<Blob> {
     const attrKey = PERICIA_ATRIBUTO[nomePericia] || 'for';
     const modAtributo = attrs[attrKey] || 0;
     const treinada = periciasNomes.includes(nomePericia);
-    const bonusTreino = treinada ? 2 : 0;
+    // Treino em T20: metade nivel + 2 (se treinada)
+    const bonusTreino = treinada ? (metadeNivel + 2) : 0;
     const total = metadeNivel + modAtributo + bonusTreino;
 
-    // Marcar checkbox treinada
     setCheck(fields.checkbox, treinada);
-
-    // Campos individuais
     setText(fields.total, String(total));
     setText(fields.metadeNivel, String(metadeNivel));
     setText(fields.modAtributo, String(modAtributo));
+    // Campo treino = apenas o bonus de proficiencia (metade nivel + 2), NAO o mod atributo
     setText(fields.treino, treinada ? String(bonusTreino) : '');
   }
 
-  // === ATAQUES (itens do tipo arma) ===
+  // === ATAQUES ===
   const armas = (personagem.itens || []).filter(i => i.tipo === 'arma').slice(0, 5);
   armas.forEach((arma, i) => {
     const n = i + 1;
@@ -147,11 +160,10 @@ export async function exportarPDF(personagem: Personagem): Promise<Blob> {
       if (partes[0]) setText(`Dano ${n}`, partes[0]);
       if (partes[1]) setText(`Cr\u00edtico ${n}`, partes[1]);
       if (partes[2]) setText(`Tipo ${n}`, partes[2]);
-      if (partes[3]) setText(`Alcance ${n}`, partes[3]);
     }
   });
 
-  // === ITENS (ate 15 slots) ===
+  // === ITENS ===
   const todosItens = personagem.itens || [];
   todosItens.slice(0, 15).forEach((item, i) => {
     const n = i + 1;
@@ -159,18 +171,24 @@ export async function exportarPDF(personagem: Personagem): Promise<Blob> {
     setText(`Item${n}`, `${qtdPrefix}${item.nome}`);
     setText(`PesoItem${n}`, String(item.peso * item.quantidade));
   });
-
   const pesoTotal = todosItens.reduce((acc, item) => acc + (item.peso * item.quantidade), 0);
   setText('CargaTotal', String(pesoTotal));
+
+  // === HABILIDADES DE RACA ===
+  const habRaca = (personagem.raca as any)?.habilidades || [];
+  const habRacaTexto = habRaca.map((h: any) => `${h.nome}: ${h.descricao || ''}`).join('\n');
+  setText('HabRa\u00e7asOrigem', habRacaTexto || personagem.raca?.nome || '');
+
+  // === HABILIDADES DE CLASSE / PODERES ===
+  const habClasse = (personagem.classe as any)?.habilidades || [];
+  const habClasseTexto = habClasse.map((h: any) => `${h.nome}: ${h.descricao || ''}`).join('\n');
+  setText('HabClassePoderes', habClasseTexto || personagem.classe?.nome || '');
 
   // === DESCRICAO / HISTORICO / ANOTACOES ===
   setText('Descri\u00e7\u00e3o', personagem.historico || '');
   setText('Anota\u00e7\u00f5es', personagem.anotacoes || '');
-  setText('HabRa\u00e7asOrigem', personagem.raca?.nome || '');
-  setText('HabClassePoderes', personagem.classe?.nome || '');
 
   form.flatten();
-
   const pdfBytes = await pdfDoc.save();
   return new Blob([pdfBytes.buffer as ArrayBuffer], { type: 'application/pdf' });
 }
