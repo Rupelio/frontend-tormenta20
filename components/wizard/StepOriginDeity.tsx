@@ -14,11 +14,14 @@ export default function StepOriginDeity({ personagem, setPersonagem, origens, di
   useEffect(() => {
     if (personagem.origem_id) {
       api.getPericiasOrigem(personagem.origem_id).then((data: any) => {
-        setPericiasOrigem(Array.isArray(data) ? data : []);
+        // API retorna { origem: "nome", pericias: [...] }
+        const pericias = data?.pericias || data;
+        setPericiasOrigem(Array.isArray(pericias) ? pericias : []);
       }).catch(() => setPericiasOrigem([]));
 
       api.getPoderesOrigem(personagem.origem_id).then((data: any) => {
-        setPoderesOrigem(Array.isArray(data) ? data : []);
+        const poderes = data?.poderes || data;
+        setPoderesOrigem(Array.isArray(poderes) ? poderes : []);
       }).catch(() => setPoderesOrigem([]));
     }
   }, [personagem.origem_id]);

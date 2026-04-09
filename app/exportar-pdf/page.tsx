@@ -158,8 +158,8 @@ const TesteExportarPDF = () => {
               {personagemSelecionado ? (
                 <ExportadorPDF
                   personagem={personagemSelecionado}
-                  onExport={(options) => {
-                    console.log('PDF exportado com opções:', options);
+                  onExport={() => {
+                    console.log('PDF exportado');
                   }}
                 />
               ) : (
