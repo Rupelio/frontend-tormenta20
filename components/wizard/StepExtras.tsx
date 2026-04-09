@@ -10,36 +10,44 @@ export default function StepExtras({ personagem, setPersonagem, origens, getId }
   const [novoItem, setNovoItem] = useState({ nome: '', tipo: 'item', quantidade: 1, peso: 0, valor: 0, descricao: '' });
 
   const itens: PersonagemItem[] = personagem.itens || [];
-  const [equipInicialAplicado, setEquipInicialAplicado] = useState(false);
 
-  // Sugerir equipamento inicial baseado na origem (so na primeira vez)
   const origemNome = origens?.find((o: any) => getId(o) === personagem.origem_id)?.nome || '';
 
-  const aplicarEquipamentoInicial = () => {
-    const itensIniciais: PersonagemItem[] = [];
+  // Aplicar kit inicial AUTOMATICAMENTE quando o step abre (nivel 1, sem itens)
+  useEffect(() => {
+    if (personagem.nivel === 1 && (!personagem.itens || personagem.itens.length === 0)) {
+      const itensIniciais: PersonagemItem[] = [];
 
-    // Itens base de todo personagem nivel 1
-    const itensBase = ['Mochila', 'Saco de dormir', 'Traje de viajante'];
-    itensBase.forEach(nome => {
-      const item = todosOsItens.find(i => i.nome === nome);
-      if (item) {
-        itensIniciais.push({ nome: item.nome, tipo: item.tipo, quantidade: 1, peso: item.peso, valor: item.preco, descricao: '' });
+      // Itens base de todo personagem nivel 1 (regra T20)
+      const itensBase = ['Mochila', 'Saco de dormir', 'Traje de viajante'];
+      itensBase.forEach(nome => {
+        const item = todosOsItens.find(i => i.nome === nome);
+        if (item) {
+          itensIniciais.push({ nome: item.nome, tipo: item.tipo, quantidade: 1, peso: item.peso, valor: item.preco, descricao: '' });
+        }
+      });
+
+      // Itens da origem
+      if (origemNome) {
+        const itensOrigem = itensIniciaisPorOrigem[origemNome] || [];
+        itensOrigem.forEach(nomeItem => {
+          // Se tem "ou", pega o primeiro como sugestao
+          const nomeReal = nomeItem.includes(' ou ') ? nomeItem.split(' ou ')[0].trim() : nomeItem;
+          const item = todosOsItens.find(i => i.nome === nomeReal);
+          if (item) {
+            itensIniciais.push({ nome: item.nome, tipo: item.tipo, quantidade: 1, peso: item.peso, valor: item.preco, descricao: '' });
+          } else {
+            // Item nao encontrado no catalogo, adicionar como texto
+            itensIniciais.push({ nome: nomeReal, tipo: 'equipamento', quantidade: 1, peso: 0, valor: 0, descricao: 'Item da origem' });
+          }
+        });
       }
-    });
 
-    // Itens da origem
-    const itensOrigem = itensIniciaisPorOrigem[origemNome] || [];
-    itensOrigem.forEach(nomeItem => {
-      if (nomeItem.includes(' ou ')) return; // Escolhas serao feitas manualmente
-      const item = todosOsItens.find(i => i.nome === nomeItem);
-      if (item) {
-        itensIniciais.push({ nome: item.nome, tipo: item.tipo, quantidade: 1, peso: item.peso, valor: item.preco, descricao: '' });
+      if (itensIniciais.length > 0) {
+        setPersonagem((prev: any) => ({ ...prev, itens: itensIniciais }));
       }
-    });
-
-    setPersonagem((prev: any) => ({ ...prev, itens: [...(prev.itens || []), ...itensIniciais], dinheiro: (prev.dinheiro || 0) }));
-    setEquipInicialAplicado(true);
-  };
+    }
+  }, []); // Roda uma vez ao montar o step
 
   const adicionarItemPreDefinido = (item: ItemPreDefinido) => {
     const existente = itens.findIndex(i => i.nome === item.nome);
@@ -97,24 +105,6 @@ export default function StepExtras({ personagem, setPersonagem, origens, getId }
           className="w-full p-3 border border-gray-300 rounded-lg text-gray-800"
         />
       </div>
-
-      {/* Kit inicial */}
-      {!equipInicialAplicado && itens.length === 0 && personagem.nivel === 1 && (
-        <div className="p-4 bg-amber-50 rounded-lg border border-amber-200">
-          <h3 className="text-sm font-semibold text-amber-800 mb-1">Equipamento Inicial (Nivel 1)</h3>
-          <p className="text-xs text-amber-700 mb-2">
-            Todo personagem de 1o nivel comeca com: mochila, saco de dormir, traje de viajante
-            {origemNome && <>, mais itens da origem <strong>{origemNome}</strong></>}.
-            Voce tambem pode escolher uma arma e armadura.
-          </p>
-          <button
-            onClick={aplicarEquipamentoInicial}
-            className="px-4 py-2 bg-amber-600 text-white rounded text-sm hover:bg-amber-700"
-          >
-            Aplicar Kit Inicial
-          </button>
-        </div>
-      )}
 
       {/* Inventario atual */}
       <div>
