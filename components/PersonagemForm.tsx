@@ -927,11 +927,8 @@ const periciasDeRacaEscolhidasObjetos = useMemo(() => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 py-8">
-      <div className="max-w-7xl mx-auto px-4">
-        <h1 className="text-4xl font-bold text-center mb-8 text-black">
-          {isEditing ? 'Editar Personagem - Tormenta20' : 'Criar Personagem - Tormenta20'}
-        </h1>
+    <div className="py-2">
+      <div className="max-w-7xl mx-auto">
 
         {/* Botão de Recuperar Dados */}
         {showRecoverButton && (
@@ -1461,34 +1458,18 @@ const periciasDeRacaEscolhidasObjetos = useMemo(() => {
             className={`w-full py-4 px-6 rounded-lg font-bold text-lg ${
               isLoading('createPersonagem')
                 ? "bg-gray-400 cursor-not-allowed"
-                : "bg-green-600 hover:bg-green-700"
-            } text-white transition duration-200 transform hover:scale-105`}
+                : "bg-red-700 hover:bg-red-800"
+            } text-white transition duration-200 shadow-md`}
           >
             {isLoading('createPersonagem') ? (
               <div className="flex items-center justify-center">
                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                {isEditing ? 'Atualizando Personagem...' : 'Criando Personagem...'}
+                {isEditing ? 'Atualizando...' : 'Criando...'}
               </div>
             ) : (
-              isEditing ? "✏️ Atualizar Personagem" : "🎭 Criar Personagem"
+              isEditing ? "Atualizar Personagem" : "Criar Personagem"
             )}
           </button>
-
-          {/* Botões de Ação Adicionais */}
-          <div className="mt-4 flex gap-3">
-            {/* <Link
-              href="/exportar-pdf"
-              className="flex-1 py-3 px-4 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium text-center transition-colors"
-            >
-              📄 Exportar PDF
-            </Link> */}
-            <Link
-              href="/"
-              className="flex-1 py-3 px-4 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-medium text-center transition-colors"
-            >
-              🏠 Voltar
-            </Link>
-          </div>
         </div>
 
         </div>

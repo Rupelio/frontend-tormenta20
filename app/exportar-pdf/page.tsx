@@ -15,14 +15,22 @@ const TesteExportarPDF = () => {
 
   const carregarPersonagens = async () => {
     try {
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api';
-      const response = await fetch(`${API_BASE_URL}/api/v1/personagens`);
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
+      const sessionId = typeof window !== 'undefined' ? window.localStorage.getItem('user_session_id') : null;
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (sessionId) {
+        headers['X-User-Session-ID'] = sessionId;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/api/v1/personagens`, {
+        credentials: 'include',
+        headers,
+      });
 
       if (response.ok) {
         const data = await response.json();
         setPersonagens(data);
 
-        // Selecionar o primeiro personagem automaticamente
         if (data.length > 0) {
           setPersonagemSelecionado(data[0]);
         }
